@@ -445,6 +445,7 @@ html, body {
       <div class="tab" data-tab="sales" onclick="switchTab('sales')">📈 Sales</div>
       <div class="tab" data-tab="rivals" onclick="switchTab('rivals')">⚔️ Rivals</div>
       <div class="tab" data-tab="town" onclick="switchTab('town')">🏙️ Town</div>
+      <div class="tab" data-tab="budget" onclick="switchTab('budget')">💰 Budget</div>
     </div>
     <div id="sheet-content"></div>
   </div>
@@ -898,6 +899,7 @@ function renderTab() {
     case 'sales': el.innerHTML = renderUpgrades('sales'); break;
     case 'rivals': el.innerHTML = renderRivals(); break;  // renderRivals returns only static game data (no user input)
     case 'town': el.innerHTML = renderTown(); break;  // renderTown returns only static game data (no user input)
+    case 'budget': el.innerHTML = renderBudget(); break;  // renderBudget returns only static game data (no user input)
   }
 }
 
@@ -1181,6 +1183,77 @@ function renderTown() {
     <div class="town-grid">${cells}</div>
     <div class="town-next">${nextHint}</div>
   </div>`;  // all values from internal game state — no user input rendered here
+}
+
+// ══════════════════════════════════════════════
+//  BUDGET SCREEN
+// ══════════════════════════════════════════════
+function renderBudget() {
+  const eff = G.taxRushActive ? G.taxRushMultiplier : 1;
+  const sm = G.salesMultiplier;
+  const firmIncome = G.perSecond * sm * eff;
+
+  const townPop = townSlots.filter(s => G.totalEarned >= s.at).reduce((sum, s) => sum + s.pop, 0);
+  const tr = G.taxRate;
+  const happMult = tr<=5?0.2:tr<=10?0.6:tr<=22?1.0:tr<=32?0.75:tr<=42?0.4:0.1;
+  const townIncome = townPop * (tr / 100) * happMult * G.townEventMult * 0.5 * eff;
+
+  const totalPassive = firmIncome + townIncome;
+  const firmPct  = totalPassive > 0 ? Math.round(firmIncome / totalPassive * 100) : 0;
+  const townPct  = totalPassive > 0 ? Math.round(townIncome / totalPassive * 100) : 0;
+
+  const builtCount = townSlots.filter(s => G.totalEarned >= s.at).length;
+  const hScore = getHappinessScore();
+  const hap = getTownHappiness();
+  let levelInfo = townLevels[0];
+  townLevels.forEach(l => { if (builtCount >= l.minBuilt) levelInfo = l; });
+
+  function bar(pct, color) {
+    return `<div style="display:inline-block;width:${Math.max(pct,2)}%;height:10px;background:${color};vertical-align:middle;border:1px solid rgba(0,0,0,0.15);"></div>`;
+  }
+
+  const rows = [
+    ['1','💰 TOWN BUDGET','FY'+G.year+'/'+(G.year+1),'',''],
+    ['2','','','',''],
+    ['3','SOURCE','PER SECOND','SHARE','BAR CHART'],
+    ['4','🏢 Firm Staff Income','$'+fmt(firmIncome)+'/s',firmPct+'%', bar(firmPct,'#4488cc')],
+    ['5','🏙️ Town Tax Income','$'+fmt(townIncome)+'/s',townPct+'%', bar(townPct,'#44aa66')],
+    ['6','🖱️ Click Income','$'+fmt(G.clickValue*sm*eff)+' per click','—','(variable)'],
+    ['7','','','',''],
+    ['8','💰 TOTAL PASSIVE','$'+fmt(totalPassive)+'/s','100%', bar(100,'#888')],
+    ['9','','','',''],
+    ['10','🏙️ TOWN SUMMARY','','',''],
+    ['11','Population','👥 '+townPop,'',''],
+    ['12','Tax Rate','🏛️ '+G.taxRate+'%','',''],
+    ['13','Happiness',hap.emoji+' '+hScore+'%','',''],
+    ['14','Town Level',levelInfo.name,'',''],
+    ['15','Buildings Built',builtCount+' of 30','',''],
+    ['16','Town Tax/sec','$'+fmt(townIncome)+'/s','',''],
+    ['17','','','',''],
+    ['18','💡 TIP','Taxes pay for town services!','Keep citizens happy','for max income!'],
+  ];
+
+  let html = `<table class="sheet-table">
+    <colgroup><col width="30"><col width="180"><col width="120"><col width="60"><col></colgroup>
+    <tr><th></th><th>A</th><th>B</th><th>C</th><th>D</th></tr>`;
+
+  rows.forEach(([num, a, b, c, d]) => {
+    const isHeader = num === '1';
+    const isSectionHead = (a.startsWith('💰 TOWN') || a.startsWith('🏙️ TOWN')) && num !== '5' && num !== '6' && num !== '16';
+    const isTotal = num === '8';
+    const isTip = num === '18';
+    const rowStyle = isHeader ? 'font-weight:700;font-size:13px;' : isTotal ? 'font-weight:700;background:var(--highlight);' : isSectionHead && num!=='1' ? 'font-weight:700;background:var(--cell-header);' : isTip ? 'color:#666;font-style:italic;' : '';
+    html += `<tr style="${rowStyle}">
+      <td class="row-header">${num}</td>
+      <td>${a}</td>
+      <td class="${(num==='4'||num==='5'||num==='8')?'cell-money':''}">${b}</td>
+      <td class="cell-center">${c}</td>
+      <td>${d}</td>
+    </tr>`;
+  });
+
+  html += '</table>';
+  return html;
 }
 
 // ══════════════════════════════════════════════
