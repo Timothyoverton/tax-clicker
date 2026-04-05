@@ -457,6 +457,12 @@ html, body {
   <span class="status-section" id="status-right">FY 2026/2027 | Q1</span>
 </div>
 
+<!-- BIG TIMER: always visible top-right -->
+<div id="big-timer" style="position:fixed;top:8px;right:12px;z-index:250;background:#000080;color:#ffffff;font-family:'VT323',monospace;font-size:32px;font-weight:700;padding:6px 16px;border:3px outset #ffffff;box-shadow:3px 3px 0 rgba(0,0,0,0.5);letter-spacing:2px;display:none;text-align:center;line-height:1.1;">
+  <div style="font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:400;letter-spacing:0;opacity:0.85;">⏱ TIME LEFT</div>
+  <div id="big-timer-text">30:00</div>
+</div>
+
 <div id="notification">
   <div class="notif-title">
     <span id="notif-title-text">📢 Notice</span>
@@ -736,7 +742,7 @@ function buyUpgrade(id) {
   if (G.money >= cost) {
     G.money -= cost;
     u.owned++;
-    recalc(); renderTab(); renderOffice(); checkMilestones();
+    recalc(); G._lastRender = Date.now(); renderTab(); renderOffice(); checkMilestones();
     if (u.isSean && u.owned === 1) {
       queueNotif('🐐 MAX WELLINGTON HAS ENTERED THE BUILDING',
         '\u2B50\u2B50\u2B50 LEGENDARY HIRE \u2B50\u2B50\u2B50<br><br>Max Wellington has joined your firm!<br><br>+$500/sec passive income<br>+$200 per click<br>Rival growth reduced by 50%!<br><br><i>"G\'day. Point me at those BAS lodgements."</i><br><br>The Big Four are trembling. PwC just called an emergency board meeting.');
@@ -1414,7 +1420,15 @@ function updateStatus(){
     const mins=Math.floor(timeLeft/60);
     const secs=Math.floor(timeLeft%60);
     const urgent=timeLeft<60?'⚠️':'⏱️';
-    document.getElementById('status-right').textContent=`${urgent} ${mins}:${secs.toString().padStart(2,'0')} left`;
+    const timeStr=`${mins}:${secs.toString().padStart(2,'0')}`;
+    document.getElementById('status-right').textContent=`${urgent} ${timeStr} left`;
+    const bigTimer=document.getElementById('big-timer');
+    const bigTimerText=document.getElementById('big-timer-text');
+    if(G.gameStarted&&bigTimer){
+      bigTimer.style.display='block';
+      bigTimer.style.background=timeLeft<60?'#8b0000':timeLeft<300?'#5a4000':'#000080';
+      if(bigTimerText) bigTimerText.textContent=timeStr;
+    }
   }
 }
 const formulaQuips=[
@@ -1495,7 +1509,12 @@ function tick(){
     checkWin();
   }
 
-  renderTab();renderOffice();updateStatus();checkMilestones();
+  // Throttle renderTab to every 500ms so buy buttons work (rapid DOM replacement breaks clicks)
+  if (!G._lastRender || now - G._lastRender >= 500) {
+    G._lastRender = now;
+    renderTab();
+  }
+  renderOffice();updateStatus();checkMilestones();
   requestAnimationFrame(tick);
 }
 
