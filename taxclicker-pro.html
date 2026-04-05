@@ -261,6 +261,17 @@ html, body {
 
 .cell-brad { background: linear-gradient(90deg, #e0f0ff, #c0dcf8); font-weight: 700; }
 
+#balance-display {
+  padding: 6px 8px; background: #000080; color: #ffffff; text-align: center;
+  font-family: 'VT323', monospace; font-size: 28px; font-weight: 700;
+  letter-spacing: 1px; border-top: 1px solid var(--cell-border);
+  text-shadow: 0 0 8px rgba(100,200,255,0.6);
+  line-height: 1.1;
+}
+#balance-display .balance-label {
+  font-size: 10px; font-family: 'IBM Plex Mono', monospace; font-weight: 400;
+  opacity: 0.75; letter-spacing: 2px; text-transform: uppercase; display: block;
+}
 #click-zone {
   padding: 8px; background: var(--cell-header); border-top: 1px solid var(--cell-border);
   display: flex; gap: 8px; align-items: center; justify-content: center;
@@ -434,6 +445,10 @@ html, body {
       <span id="office-level">Level 1: Garage Office</span>
     </div>
     <div id="office-canvas-wrap"><canvas id="office-canvas"></canvas></div>
+    <div id="balance-display">
+      <span class="balance-label">💰 Bank Balance</span>
+      <span id="balance-amount">$0</span>
+    </div>
     <div id="click-zone">
       <button id="big-click">📄 LODGE FINANCIALS & TAX RETURNS</button>
     </div>
@@ -740,9 +755,22 @@ function getCost(u) {
   return Math.floor(u.baseCost * Math.pow(u.costMult, u.owned) * G.crisisCostMult);
 }
 
+function getDeskCapacity() {
+  const desks = (upgrades.find(u => u.id === 'desk')?.owned || 0) + 1; // +1 starter desk
+  const staff = upgrades.filter(u => u.category === 'staff').reduce((s, u) => s + u.owned, 0);
+  return { desks, staff, available: desks - staff };
+}
+
 function buyUpgrade(id) {
   const u = upgrades.find(x => x.id === id);
   const cost = getCost(u);
+  if (u.category === 'staff') {
+    const { available } = getDeskCapacity();
+    if (available <= 0) {
+      queueNotif('🪑 Need More Desks!', 'There\'s no desk for this person to sit at!<br><br>Go to the <b>Upgrades</b> tab and buy more <b>Extra Desks</b> first.<br><br><i>Each desk supports one staff member.</i>');
+      return;
+    }
+  }
   if (G.money >= cost) {
     G.money -= cost;
     u.owned++;
@@ -1018,6 +1046,7 @@ function renderUpgrades(category) {
     <tr><th></th><th></th><th>A</th><th>B</th><th>C</th><th>D</th><th>E</th></tr>
     <tr><td class="row-header">1</td><td></td><td style="font-weight:700;font-size:13px;" colspan="5">${catNames[category]}</td></tr>
     ${category==='sales' ? `<tr><td class="row-header"></td><td></td><td colspan="5" style="color:#336699;font-weight:600;">Current Sales Multiplier: <span style="color:var(--green-money);font-size:13px;">${G.salesMultiplier.toFixed(1)}x</span> — applies to ALL revenue (clicks + passive)</td></tr>` : ''}
+    ${(() => { if (category !== 'staff') return ''; const {desks,staff,available} = getDeskCapacity(); const color = available>0?'#d4edda':available===0?'#fff3cd':'#f8d7da'; const border = available>0?'#28a745':available===0?'#ffc107':'#dc3545'; return `<tr><td class="row-header"></td><td></td><td colspan="5" style="background:${color};border:1px solid ${border};font-weight:700;padding:3px 8px;">🪑 Desk Capacity: ${staff}/${desks} staff seated — <span style="color:${available>0?'#155724':'#856404'};">${available>0?available+' desk'+(available>1?'s':'')+' free':'⚠️ No desks free! Buy more Desks in the Upgrades tab first.'}</span></td></tr>`; })()}
     ${G.crisisActive && G.crisisCostMult > 1 ? `<tr><td class="row-header"></td><td></td><td colspan="5" style="color:var(--red-loss);font-weight:700;">\u26A0\uFE0F ${G.crisisName} — costs ${G.crisisCostMult}x!</td></tr>` : ''}
     <tr>
       <td class="row-header">2</td><td style="background:var(--cell-header)"></td>
@@ -1029,7 +1058,8 @@ function renderUpgrades(category) {
     </tr>
     ${items.map((u, i) => {
       const cost = getCost(u);
-      const canBuy = G.money >= cost;
+      const deskOk = u.category !== 'staff' || getDeskCapacity().available > 0;
+      const canBuy = G.money >= cost && deskOk;
       const s = u.isSean;
       const b = u.isBrad;
       return `<tr ${s?'class="cell-sean"':''}${b?'class="cell-brad"':''}>
@@ -1541,6 +1571,9 @@ function updateStatus(){
   const myPos=rank.findIndex(r=>r.name==='YOUR FIRM')+1;
   const hScore=getHappinessScore();
   const hEmoji=hScore>=80?'😊':hScore>=55?'😐':hScore>=35?'😟':'😡';
+  // Live bank balance display above Lodge button
+  const balEl=document.getElementById('balance-amount');
+  if(balEl) balEl.textContent='$'+fmt(G.money);
   document.getElementById('status-left').textContent=`Rank: #${myPos}/5`;
   document.getElementById('status-center').textContent=`${hEmoji} Town: ${hScore}% happy`;
   if (!G.gameWon) {
