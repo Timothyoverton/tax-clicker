@@ -1788,7 +1788,7 @@ function showWinScreen() {
   const hasBrad = upgrades.find(u => u.id === 'brad')?.owned > 0;
 
   const trophy = G.winByBillion ? '🏆🎉🏆' : '⏰🎯⏰';
-  const headline = G.winByBillion ? 'YOUR FIRM HIT $1 BILLION REVENUE!' : "TIME'S UP! 30 MINUTES DONE!";
+  const headline = G.winByBillion ? 'YOUR FIRM HIT $1 BILLION REVENUE!' : "TIME'S UP! 15 MINUTES DONE!";
   const subline = G.winByBillion ? 'Time to $1B — challenge your mates to beat it!' : 'Your score = total profit earned. Can you do better?';
 
   document.getElementById('win-body-content').innerHTML =  // all values are internal game state (numbers/booleans), no user text input — not an XSS risk
@@ -1831,6 +1831,25 @@ function showWinScreen() {
         '<div class="win-bar-label">🖱️ Clicks ' + clickPct.toFixed(0) + '% &nbsp;|&nbsp; ⚙️ Passive ' + passivePct.toFixed(0) + '%</div>' +
       '</div>' +
     '</div>' +
+
+    (() => {
+      const builtCount = townSlots.filter(s => G.totalEarned >= s.at).length;
+      const pop = townSlots.filter(s => G.totalEarned >= s.at).reduce((s, t) => s + t.pop, 0);
+      let lvlInfo = townLevels[0];
+      townLevels.forEach(l => { if (builtCount >= l.minBuilt) lvlInfo = l; });
+      const svcCount = Object.keys(G.cityServices).length;
+      const hScore = getHappinessScore();
+      const hEmoji = hScore >= 80 ? '😊' : hScore >= 55 ? '😐' : hScore >= 35 ? '😟' : '😡';
+      return '<h2>🏙️ YOUR TOWN</h2>' +
+        '<table>' +
+          '<tr><th>Stat</th><th style="text-align:right">Result</th></tr>' +
+          '<tr><td>🏙️ Town Level</td><td class="stat-val">' + lvlInfo.name + '</td></tr>' +
+          '<tr><td>🏗️ Buildings Built</td><td class="stat-val">' + builtCount + ' / 30</td></tr>' +
+          '<tr><td>👥 Final Population</td><td class="stat-val">' + pop + ' citizens</td></tr>' +
+          '<tr><td>🏛️ City Services</td><td class="stat-val">' + svcCount + ' / ' + cityServiceDefs.length + ' built</td></tr>' +
+          '<tr><td>😊 Citizen Happiness</td><td class="stat-val">' + hEmoji + ' ' + hScore + '%</td></tr>' +
+        '</table>';
+    })() +
 
     '<h2>🏅 LEGENDARY HIRES</h2>' +
     '<table>' +
