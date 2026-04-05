@@ -413,6 +413,16 @@ html, body {
 .town-cell.tappable { cursor: pointer; }
 .town-cell.town-tap { animation: townTap 0.25s ease; }
 @keyframes townTap { 0%{transform:scale(1);} 40%{transform:scale(0.82) rotate(-5deg);} 80%{transform:scale(1.15) rotate(3deg);} 100%{transform:scale(1);} }
+.town-sky { position:relative;overflow:hidden;background:linear-gradient(180deg,#87ceeb 0%,#b8e4f8 100%);height:32px;border:2px inset var(--win-dark);border-bottom:none;max-width:420px;margin-bottom:0; }
+.sky-sun { position:absolute;top:4px;font-size:20px;animation:sunMove 30s linear infinite; }
+@keyframes sunMove { 0%{left:-24px;} 100%{left:calc(100% + 24px);} }
+.sky-cloud { position:absolute;top:6px;font-size:16px;opacity:0.85; }
+.sky-cloud.c1 { animation:cloud1 18s linear infinite; }
+.sky-cloud.c2 { animation:cloud2 26s linear infinite; animation-delay:-10s; }
+.sky-cloud.c3 { animation:cloud3 22s linear infinite; animation-delay:-6s; }
+@keyframes cloud1 { 0%{left:-30px;} 100%{left:calc(100% + 30px);} }
+@keyframes cloud2 { 0%{left:-30px;} 100%{left:calc(100% + 30px);} }
+@keyframes cloud3 { 0%{left:-30px;} 100%{left:calc(100% + 30px);} }
 .town-cell .cell-label {
   font-size: 7px; color: rgba(0,0,0,0.55); line-height: 1; margin-top: 1px;
   font-family: 'IBM Plex Mono', monospace;
@@ -1466,6 +1476,12 @@ function renderTown() {
       <div style="padding:3px 7px;background:#d4edda;border:1px solid #28a745;">🌳 Parks: ${parks} <span style="color:#555;">(+${parks*8}😊 happiness)</span></div>
       <div style="padding:3px 7px;background:#cce5ff;border:1px solid #4488cc;">🏫 Schools: ${schools} <span style="color:#555;">(+${((schoolMult-1)*100).toFixed(0)}% income)</span></div>
       <div style="padding:3px 7px;background:#fff3cd;border:1px solid #ffc107;">🏪 Shops: ${shops} <span style="color:#555;">(+$${shopFlat.toFixed(1)}/sec)</span></div>
+    </div>
+    <div class="town-sky">
+      <span class="sky-sun">☀️</span>
+      <span class="sky-cloud c1">☁️</span>
+      <span class="sky-cloud c2">⛅</span>
+      <span class="sky-cloud c3">☁️</span>
     </div>
     <div class="town-grid">${cells}</div>
     ${progressBar}
