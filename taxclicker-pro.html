@@ -1,0 +1,1337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TaxClicker Pro™ 98 - Enterprise Accounting Simulator</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=VT323&family=IBM+Plex+Mono:wght@400;600;700&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --win-bg: #c0c0c0;
+  --win-dark: #808080;
+  --win-light: #ffffff;
+  --win-blue: #000080;
+  --win-blue-light: #1084d0;
+  --cell-bg: #ffffff;
+  --cell-border: #b0b0b0;
+  --cell-header: #d4d0c8;
+  --green-money: #008000;
+  --red-loss: #cc0000;
+  --highlight: #ffffcc;
+  --toolbar-bg: #ece9d8;
+}
+
+html, body {
+  width: 100%; height: 100%;
+  font-family: 'IBM Plex Mono', 'Courier New', monospace;
+  font-size: 12px;
+  background: #008080;
+  overflow: hidden;
+  user-select: none;
+}
+
+#titlebar {
+  background: linear-gradient(90deg, var(--win-blue), var(--win-blue-light));
+  color: white; padding: 3px 6px; display: flex; justify-content: space-between; align-items: center;
+  font-family: 'VT323', monospace; font-size: 15px; letter-spacing: 0.5px;
+}
+#titlebar .buttons { display: flex; gap: 2px; }
+#titlebar .btn {
+  width: 18px; height: 18px; background: var(--win-bg); border: 1.5px outset var(--win-light);
+  display: flex; align-items: center; justify-content: center; font-size: 11px; cursor: pointer; color: #000;
+  font-family: 'VT323', monospace;
+}
+#titlebar .btn:active { border-style: inset; }
+
+#menubar {
+  background: var(--toolbar-bg); border-bottom: 1px solid var(--win-dark); padding: 2px 4px; display: flex; gap: 2px; font-size: 12px;
+  position: relative; z-index: 50;
+}
+#menubar .menu-item { padding: 2px 8px; cursor: pointer; position: relative; }
+#menubar .menu-item:hover { background: var(--win-blue); color: white; }
+.dropdown {
+  display: none; position: absolute; top: 100%; left: 0; background: var(--win-bg);
+  border: 2px outset var(--win-light); min-width: 200px; z-index: 60;
+  box-shadow: 3px 3px 0 rgba(0,0,0,0.2); padding: 2px 0;
+}
+.dropdown.open { display: block; }
+.dropdown .dd-item {
+  padding: 4px 20px; cursor: pointer; font-size: 12px; white-space: nowrap;
+  font-family: 'IBM Plex Mono', monospace; display: flex; align-items: center; gap: 8px;
+}
+.dropdown .dd-item:hover { background: var(--win-blue); color: white; }
+.dropdown .dd-sep { border-top: 1px solid var(--win-dark); margin: 2px 4px; }
+.dropdown .dd-item.disabled { color: var(--win-dark); cursor: default; }
+.dropdown .dd-item.disabled:hover { background: transparent; color: var(--win-dark); }
+.dd-shortcut { margin-left: auto; color: #666; font-size: 10px; }
+.dropdown .dd-item:hover .dd-shortcut { color: #ccc; }
+
+/* Help modal (larger, scrollable) */
+#help-modal {
+  position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  background: var(--win-bg); border: 3px outset var(--win-light); padding: 0;
+  z-index: 110; display: none; width: 560px; max-height: 80vh;
+  box-shadow: 5px 5px 0 rgba(0,0,0,0.3);
+}
+#help-modal .help-title {
+  background: linear-gradient(90deg, var(--win-blue), var(--win-blue-light)); color: white;
+  padding: 3px 8px; font-family: 'VT323', monospace; font-size: 15px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+#help-modal .help-body {
+  padding: 12px 16px; overflow-y: auto; max-height: calc(80vh - 60px);
+  background: white; border: 1px inset var(--win-dark); margin: 4px;
+  font-size: 11px; line-height: 1.6;
+}
+#help-modal .help-body h2 {
+  font-family: 'VT323', monospace; font-size: 16px; color: var(--win-blue);
+  border-bottom: 1px solid var(--cell-border); padding-bottom: 3px; margin: 12px 0 6px 0;
+}
+#help-modal .help-body h2:first-child { margin-top: 0; }
+#help-modal .help-body table {
+  width: 100%; border-collapse: collapse; margin: 6px 0;
+}
+#help-modal .help-body table th {
+  background: var(--cell-header); border: 1px solid var(--cell-border);
+  padding: 3px 8px; text-align: left; font-weight: 600;
+}
+#help-modal .help-body table td {
+  border: 1px solid var(--cell-border); padding: 3px 8px;
+}
+#help-modal .help-footer {
+  padding: 6px; text-align: center; border-top: 1px solid var(--cell-border);
+}
+#help-close-btn {
+  background: var(--cell-header); border: 2px outset var(--win-light); padding: 4px 24px;
+  cursor: pointer; font-family: 'IBM Plex Mono', monospace; font-size: 12px;
+}
+#help-close-btn:active { border-style: inset; }
+
+/* Restart confirm dialog */
+#restart-confirm {
+  position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  background: var(--win-bg); border: 3px outset var(--win-light); padding: 0;
+  z-index: 120; display: none; min-width: 340px;
+  box-shadow: 4px 4px 0 rgba(0,0,0,0.3);
+}
+#restart-confirm .rc-title {
+  background: linear-gradient(90deg, #800000, #cc4444); color: white;
+  padding: 3px 8px; font-family: 'VT323', monospace; font-size: 14px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+#restart-confirm .rc-body { padding: 16px; text-align: center; }
+#restart-confirm .rc-body p { margin-bottom: 14px; font-size: 12px; line-height: 1.5; }
+#restart-confirm .rc-buttons { display: flex; gap: 10px; justify-content: center; }
+.rc-btn {
+  background: var(--cell-header); border: 2px outset var(--win-light); padding: 4px 20px;
+  cursor: pointer; font-family: 'IBM Plex Mono', monospace; font-size: 12px;
+}
+.rc-btn:active { border-style: inset; }
+.rc-btn.danger { background: #ffcccc; }
+
+/* Win screen */
+#win-screen {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,40,0.85); z-index: 200; display: none;
+  align-items: center; justify-content: center;
+}
+#win-screen.show { display: flex; }
+#win-box {
+  background: var(--win-bg); border: 3px outset var(--win-light);
+  width: 520px; max-height: 90vh; box-shadow: 6px 6px 0 rgba(0,0,0,0.5);
+}
+#win-box .win-title {
+  background: linear-gradient(90deg, #b8860b, #ffd700, #b8860b);
+  color: #333; padding: 4px 10px; font-family: 'VT323', monospace; font-size: 17px;
+  text-align: center; letter-spacing: 1px; font-weight: 700;
+}
+#win-box .win-body {
+  padding: 16px; overflow-y: auto; max-height: calc(90vh - 80px);
+}
+#win-box .win-body h2 {
+  font-family: 'VT323', monospace; font-size: 15px; color: var(--win-blue);
+  border-bottom: 1px solid var(--cell-border); padding-bottom: 3px; margin: 14px 0 6px 0;
+}
+#win-box .win-body .win-hero {
+  text-align: center; padding: 12px 0; font-family: 'VT323', monospace;
+}
+#win-box .win-body .win-hero .win-trophy { font-size: 48px; }
+#win-box .win-body .win-hero .win-headline {
+  font-size: 22px; color: #b8860b; margin: 8px 0 4px 0;
+}
+#win-box .win-body .win-hero .win-time {
+  font-size: 28px; color: var(--win-blue); letter-spacing: 2px;
+}
+#win-box .win-body table {
+  width: 100%; border-collapse: collapse; margin: 6px 0;
+}
+#win-box .win-body table th {
+  background: var(--cell-header); border: 1px solid var(--cell-border);
+  padding: 4px 8px; text-align: left; font-weight: 600; font-size: 11px;
+}
+#win-box .win-body table td {
+  border: 1px solid var(--cell-border); padding: 4px 8px; font-size: 11px;
+}
+#win-box .win-body table td.stat-val {
+  text-align: right; font-weight: 700; color: var(--green-money);
+}
+.win-bar-wrap { width: 100%; background: #eee; border: 1px solid var(--cell-border); height: 16px; margin: 2px 0; position: relative; }
+.win-bar-click { background: #4488cc; height: 100%; display: inline-block; }
+.win-bar-passive { background: #44aa66; height: 100%; display: inline-block; }
+.win-bar-label { position: absolute; top: 0; left: 4px; font-size: 9px; line-height: 16px; color: #fff; font-weight: 700; text-shadow: 1px 1px 0 rgba(0,0,0,0.4); }
+#win-box .win-footer { padding: 8px; text-align: center; border-top: 1px solid var(--cell-border); display: flex; gap: 10px; justify-content: center; }
+.win-footer-btn {
+  background: var(--cell-header); border: 2px outset var(--win-light); padding: 5px 20px;
+  cursor: pointer; font-family: 'IBM Plex Mono', monospace; font-size: 12px;
+}
+.win-footer-btn:active { border-style: inset; }
+.win-footer-btn.gold { background: linear-gradient(180deg, #ffe4b5, #daa520); font-weight: 700; }
+
+#toolbar {
+  background: var(--toolbar-bg); border-bottom: 1px solid var(--win-dark); padding: 3px 6px;
+  display: flex; gap: 6px; align-items: center; font-size: 11px;
+}
+.toolbar-cell {
+  background: white; border: 1px inset var(--win-dark); padding: 2px 6px; min-width: 80px;
+  font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+}
+#formula-bar {
+  flex: 1; background: white; border: 1px inset var(--win-dark); padding: 2px 6px;
+  font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--green-money);
+  font-weight: 600; overflow: hidden; white-space: nowrap;
+}
+
+#main { display: flex; height: calc(100vh - 82px); background: var(--win-bg); }
+
+#office-panel { width: 340px; min-width: 340px; border-right: 2px groove var(--win-light); display: flex; flex-direction: column; }
+#office-header {
+  background: var(--cell-header); border-bottom: 1px solid var(--cell-border); padding: 4px 8px;
+  font-weight: 700; font-size: 11px; display: flex; justify-content: space-between;
+}
+#office-canvas-wrap { flex: 1; background: #f0f0e8; position: relative; overflow: hidden; }
+#office-canvas { width: 100%; height: 100%; image-rendering: pixelated; }
+
+#sheet-panel { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+#tab-bar { display: flex; background: var(--win-bg); border-top: 1px solid var(--cell-border); padding-top: 2px; flex-wrap: wrap; }
+.tab {
+  padding: 3px 12px; background: var(--cell-header); border: 1px solid var(--cell-border);
+  border-bottom: none; cursor: pointer; font-size: 11px; margin-left: 2px; position: relative; bottom: -1px;
+}
+.tab.active { background: white; border-bottom: 1px solid white; font-weight: 700; }
+
+#sheet-content { flex: 1; background: white; overflow-y: auto; border: 1px inset var(--win-dark); }
+
+.sheet-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.sheet-table th {
+  background: var(--cell-header); border: 1px solid var(--cell-border); padding: 3px 6px;
+  font-weight: 600; font-size: 11px; text-align: center; position: sticky; top: 0; z-index: 2;
+}
+.sheet-table td { border: 1px solid var(--cell-border); padding: 4px 8px; font-size: 11px; vertical-align: middle; }
+.sheet-table .row-header { background: var(--cell-header); text-align: center; font-weight: 600; width: 30px; }
+.cell-money { text-align: right; color: var(--green-money); font-weight: 600; }
+.cell-red { text-align: right; color: var(--red-loss); font-weight: 600; }
+.cell-center { text-align: center; }
+.cell-highlight { background: var(--highlight); }
+.cell-gold { background: #fff8dc; }
+.cell-sean { background: linear-gradient(90deg, #fff8dc, #ffe4b5); font-weight: 700; }
+
+.buy-btn {
+  background: var(--cell-header); border: 2px outset var(--win-light); padding: 3px 10px; cursor: pointer;
+  font-family: 'IBM Plex Mono', monospace; font-size: 11px; white-space: nowrap; transition: background 0.05s;
+}
+.buy-btn:hover:not(:disabled) { background: var(--highlight); }
+.buy-btn:active:not(:disabled) { border-style: inset; }
+.buy-btn:disabled { color: var(--win-dark); cursor: not-allowed; }
+
+.buy-btn.sean-btn {
+  background: linear-gradient(180deg, #ffe4b5, #daa520);
+  color: #333; font-weight: 700; border-color: #b8860b;
+}
+.buy-btn.sean-btn:hover:not(:disabled) { background: linear-gradient(180deg, #fff0c8, #e8b830); }
+
+.buy-btn.brad-btn {
+  background: linear-gradient(180deg, #c8e6ff, #4a90d9);
+  color: #fff; font-weight: 700; border-color: #2a6cb8; text-shadow: 1px 1px 0 rgba(0,0,0,0.3);
+}
+.buy-btn.brad-btn:hover:not(:disabled) { background: linear-gradient(180deg, #d8f0ff, #5aa0e9); }
+
+.cell-brad { background: linear-gradient(90deg, #e0f0ff, #c0dcf8); font-weight: 700; }
+
+#click-zone {
+  padding: 8px; background: var(--cell-header); border-top: 1px solid var(--cell-border);
+  display: flex; gap: 8px; align-items: center; justify-content: center;
+}
+#big-click {
+  background: linear-gradient(180deg, #e8e8e0 0%, #c8c8b8 100%); border: 3px outset var(--win-light);
+  padding: 10px 28px; cursor: pointer; font-family: 'VT323', monospace; font-size: 22px;
+  letter-spacing: 1px; color: var(--win-blue); position: relative; transition: all 0.05s;
+}
+#big-click:active { border-style: inset; transform: translate(1px, 1px); }
+#big-click:hover { background: linear-gradient(180deg, #f0f0e0 0%, #d0d0c0 100%); }
+
+#statusbar {
+  background: var(--toolbar-bg); border-top: 1px solid var(--win-dark); padding: 2px 8px;
+  display: flex; justify-content: space-between; font-size: 10px; color: #444;
+}
+.status-section { border: 1px inset var(--win-dark); padding: 1px 8px; }
+
+.click-float {
+  position: fixed; pointer-events: none; font-family: 'VT323', monospace; font-size: 18px;
+  color: var(--green-money); font-weight: 700; animation: floatUp 1s ease-out forwards; z-index: 999;
+  text-shadow: 1px 1px 0 white;
+}
+@keyframes floatUp { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-50px); } }
+
+#notification {
+  position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  background: var(--win-bg); border: 3px outset var(--win-light); padding: 0;
+  z-index: 100; display: none; min-width: 360px; max-width: 460px;
+  box-shadow: 4px 4px 0 rgba(0,0,0,0.3);
+}
+#notification .notif-title {
+  background: linear-gradient(90deg, var(--win-blue), var(--win-blue-light)); color: white;
+  padding: 3px 8px; font-family: 'VT323', monospace; font-size: 14px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+#notification .notif-body { padding: 16px; text-align: center; }
+#notification .notif-body p { margin-bottom: 12px; font-size: 12px; line-height: 1.6; }
+#notif-ok {
+  background: var(--cell-header); border: 2px outset var(--win-light); padding: 4px 24px;
+  cursor: pointer; font-family: 'IBM Plex Mono', monospace; font-size: 12px;
+}
+#notif-ok:active { border-style: inset; }
+
+#event-bar {
+  display: none; padding: 3px 8px; font-size: 11px; text-align: center;
+  font-weight: 700; animation: pulse 1.5s ease-in-out infinite;
+}
+#event-bar.eofy { background: #ffffcc; border-bottom: 1px solid #cccc00; color: #666600; }
+#event-bar.crisis { background: #ffcccc; border-bottom: 1px solid #cc4444; color: #880000; }
+#event-bar.boom { background: #ccffcc; border-bottom: 1px solid #44cc44; color: #006600; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+
+.rival-bar { display: flex; align-items: center; gap: 4px; margin: 2px 0; }
+.rival-bar-fill { height: 12px; border: 1px solid; transition: width 0.5s ease; }
+.rival-you { background: #4488cc; border-color: #336699; }
+.rival-pwc { background: #cc6600; border-color: #994400; }
+.rival-kpmg { background: #005588; border-color: #003355; }
+.rival-deloitte { background: #86bc25; border-color: #6a9a1c; }
+.rival-ey { background: #ffe600; border-color: #ccb800; }
+
+#sheet-content::-webkit-scrollbar { width: 16px; }
+#sheet-content::-webkit-scrollbar-track { background: var(--cell-header); border-left: 1px solid var(--cell-border); }
+#sheet-content::-webkit-scrollbar-thumb { background: var(--win-bg); border: 2px outset var(--win-light); }
+</style>
+</head>
+<body>
+
+<div id="titlebar">
+  <span>📊 TaxClicker Pro™ 98 - [Q1_Financials.xlsm]</span>
+  <div class="buttons">
+    <div class="btn">_</div><div class="btn">□</div>
+    <div class="btn" onclick="alert('ERROR: Accountants never close their spreadsheets.')">✕</div>
+  </div>
+</div>
+<div id="menubar">
+  <div class="menu-item" onclick="toggleMenu('file-menu')">File
+    <div class="dropdown" id="file-menu">
+      <div class="dd-item disabled">📄 New Workbook</div>
+      <div class="dd-item disabled">📂 Open...</div>
+      <div class="dd-item disabled">💾 Save <span class="dd-shortcut">Ctrl+S</span></div>
+      <div class="dd-sep"></div>
+      <div class="dd-item" onclick="event.stopPropagation();closeMenus();showRestartConfirm();">🔄 Restart Firm <span class="dd-shortcut">New Game</span></div>
+      <div class="dd-sep"></div>
+      <div class="dd-item disabled">🖨️ Print BAS...</div>
+      <div class="dd-item" onclick="event.stopPropagation();closeMenus();alert('ERROR: Accountants never close their spreadsheets.');">❌ Exit</div>
+    </div>
+  </div>
+  <div class="menu-item" onclick="toggleMenu('edit-menu')">Edit
+    <div class="dropdown" id="edit-menu">
+      <div class="dd-item disabled">↩️ Undo <span class="dd-shortcut">Ctrl+Z</span></div>
+      <div class="dd-item disabled">↪️ Redo</div>
+      <div class="dd-sep"></div>
+      <div class="dd-item disabled">📋 Paste Values Only</div>
+      <div class="dd-item disabled">🔍 Find & Replace GST Errors</div>
+    </div>
+  </div>
+  <div class="menu-item" onclick="toggleMenu('view-menu')">View
+    <div class="dropdown" id="view-menu">
+      <div class="dd-item" onclick="event.stopPropagation();closeMenus();switchTab('dashboard');">📊 Dashboard</div>
+      <div class="dd-item" onclick="event.stopPropagation();closeMenus();switchTab('upgrades');">🛒 Upgrades</div>
+      <div class="dd-item" onclick="event.stopPropagation();closeMenus();switchTab('staff');">👔 Staff</div>
+      <div class="dd-item" onclick="event.stopPropagation();closeMenus();switchTab('clients');">📁 Clients</div>
+      <div class="dd-item" onclick="event.stopPropagation();closeMenus();switchTab('sales');">📈 Sales</div>
+      <div class="dd-item" onclick="event.stopPropagation();closeMenus();switchTab('rivals');">⚔️ Rivals</div>
+    </div>
+  </div>
+  <div class="menu-item disabled" style="color:#666;cursor:default;">Insert</div>
+  <div class="menu-item disabled" style="color:#666;cursor:default;">Accounting</div>
+  <div class="menu-item disabled" style="color:#666;cursor:default;">BAS</div>
+  <div class="menu-item disabled" style="color:#666;cursor:default;">Audit</div>
+  <div class="menu-item" onclick="toggleMenu('help-menu')">Help
+    <div class="dropdown" id="help-menu">
+      <div class="dd-item" onclick="event.stopPropagation();closeMenus();showHelp();">📖 Help Guide <span class="dd-shortcut">F1</span></div>
+      <div class="dd-sep"></div>
+      <div class="dd-item" onclick="event.stopPropagation();closeMenus();showAbout();">ℹ️ About TaxClicker Pro™</div>
+    </div>
+  </div>
+</div>
+<div id="toolbar">
+  <span style="font-weight:600;">C1</span>
+  <div class="toolbar-cell" id="cell-ref">REVENUE</div>
+  <span style="font-weight:600;">fx</span>
+  <div id="formula-bar">=SUM(BAS!A1:A∞) + FLAT_WHITE()</div>
+</div>
+<div id="event-bar"></div>
+
+<div id="main">
+  <div id="office-panel">
+    <div id="office-header">
+      <span>📋 Office Floor Plan</span>
+      <span id="office-level">Level 1: Garage Office</span>
+    </div>
+    <div id="office-canvas-wrap"><canvas id="office-canvas"></canvas></div>
+    <div id="click-zone">
+      <button id="big-click">📄 LODGE FINANCIALS & TAX RETURNS</button>
+    </div>
+  </div>
+  <div id="sheet-panel">
+    <div id="tab-bar">
+      <div class="tab active" data-tab="dashboard" onclick="switchTab('dashboard')">📊 Dashboard</div>
+      <div class="tab" data-tab="upgrades" onclick="switchTab('upgrades')">🛒 Upgrades</div>
+      <div class="tab" data-tab="staff" onclick="switchTab('staff')">👔 Staff</div>
+      <div class="tab" data-tab="clients" onclick="switchTab('clients')">📁 Clients</div>
+      <div class="tab" data-tab="sales" onclick="switchTab('sales')">📈 Sales</div>
+      <div class="tab" data-tab="rivals" onclick="switchTab('rivals')">⚔️ Rivals</div>
+    </div>
+    <div id="sheet-content"></div>
+  </div>
+</div>
+
+<div id="statusbar">
+  <span class="status-section" id="status-left">Ready</span>
+  <span class="status-section" id="status-center">Clients Served: 0</span>
+  <span class="status-section" id="status-right">FY 2026/2027 | Q1</span>
+</div>
+
+<div id="notification">
+  <div class="notif-title">
+    <span id="notif-title-text">📢 Notice</span>
+    <div class="btn" onclick="closeNotif()" style="font-size:10px;">✕</div>
+  </div>
+  <div class="notif-body">
+    <p id="notif-message"></p>
+    <button id="notif-ok" onclick="closeNotif()">OK</button>
+  </div>
+</div>
+
+<!-- HELP MODAL -->
+<div id="help-modal">
+  <div class="help-title">
+    <span>📖 TaxClicker Pro™ 98 — Help Guide</span>
+    <div class="btn" onclick="closeHelp()" style="font-size:10px;font-family:'VT323',monospace;">✕</div>
+  </div>
+  <div class="help-body">
+    <h2>🏢 GETTING STARTED</h2>
+    <p>Welcome to <b>TaxClicker Pro™ 98</b>, the premier Australian accounting firm idle simulator!</p>
+    <p>You start as a solo accountant in a garage. Your goal: build the most powerful accounting empire in Australia and outpace the Big Four firms.</p>
+    <p>Click <b>"LODGE FINANCIALS & TAX RETURNS"</b> (or press <b>Spacebar</b>) to earn revenue. Use that revenue to hire staff, buy equipment, and acquire clients.</p>
+
+    <h2>📊 TABS EXPLAINED</h2>
+    <table>
+      <tr><th>Tab</th><th>What it does</th></tr>
+      <tr><td>📊 Dashboard</td><td>Overview of your cash, revenue per second, lifetime earnings, industry rank, and owned assets.</td></tr>
+      <tr><td>🛒 Upgrades</td><td>Buy office equipment. Desks and calculators boost your <b>click power</b>. Printers, copiers, servers, and meeting rooms generate <b>passive income</b>.</td></tr>
+      <tr><td>👔 Staff</td><td>Hire staff from Work Experience Kids to the legendary Max Wellington. Staff generate passive revenue automatically.</td></tr>
+      <tr><td>📁 Clients</td><td>Acquire client accounts — Sole Traders, Pty Ltd businesses, ASX-listed companies, and Government Contracts. Clients generate passive revenue.</td></tr>
+      <tr><td>📈 Sales</td><td>Build a sales team to <b>multiply ALL revenue</b> (clicks + passive). Led by CRO Jake Harper. Each sales hire adds to your multiplier.</td></tr>
+      <tr><td>⚔️ Rivals</td><td>Live leaderboard against PwC, KPMG, Deloitte and EY. Your rank is shown in the status bar.</td></tr>
+    </table>
+
+    <h2>💰 EARNING REVENUE</h2>
+    <p>There are two ways to earn:</p>
+    <p><b>Clicking:</b> Each click earns your base click value (boosted by desks, calculators, and hybrid staff like the CFO and Max Wellington).</p>
+    <p><b>Passive income:</b> Staff, office equipment, and clients all earn revenue per second automatically — even while you're reading this help guide!</p>
+
+    <h2>⚔️ RIVAL FIRMS</h2>
+    <p>Four Big Four rivals compete against you:</p>
+    <table>
+      <tr><th>Rival</th><th>Aggression</th></tr>
+      <tr><td>🟠 PwC Australia</td><td>Moderate — steady growth</td></tr>
+      <tr><td>🔵 KPMG</td><td>Cautious — slower start</td></tr>
+      <tr><td>🟢 Deloitte</td><td>Aggressive — fastest grower!</td></tr>
+      <tr><td>🟡 EY</td><td>Moderate — watch out mid-game</td></tr>
+    </table>
+    <p>Rivals grow faster as your firm grows. During <b>economic crises</b>, rival growth slows — use these windows to overtake them!</p>
+
+    <h2>⚠️ ECONOMIC EVENTS</h2>
+    <p>Random events strike every 50–90 seconds. They appear as a <b>popup alert</b> and a <b>coloured banner</b> at the top of the screen.</p>
+    <table>
+      <tr><th>Event</th><th>Effect</th><th>Duration</th></tr>
+      <tr><td>📉 GFC 2.0</td><td>Costs 3x</td><td>45 sec</td></tr>
+      <tr><td>💸 Hyperinflation</td><td>Costs 5x</td><td>40 sec</td></tr>
+      <tr><td>🔍 ATO Audit Blitz</td><td>Costs 2x</td><td>50 sec</td></tr>
+      <tr><td>🏠 Property Bubble Pop</td><td>Costs 4x</td><td>35 sec</td></tr>
+      <tr><td>₿ Crypto Crash</td><td>Costs 3x, Earnings 2x</td><td>40 sec</td></tr>
+      <tr><td>⛏️ Mining Boom</td><td>Earnings 4x</td><td>35 sec</td></tr>
+      <tr><td>🏛️ Government Stimulus</td><td>Earnings 3x</td><td>40 sec</td></tr>
+    </table>
+    <p><b>Strategy tip:</b> During cost crises, hold off buying. During booms, click furiously!</p>
+    <p>The <b>EOFY Rush</b> (End of Financial Year) triggers automatically in Q4, giving 3x earnings for 30 seconds.</p>
+
+    <h2>🐐 MAX WELLINGTON — THE ULTIMATE ACCOUNTANT</h2>
+    <p>Once your firm reaches <b>$500,000 lifetime revenue</b>, the legendary Max Wellington becomes available for hire.</p>
+    <p>He costs <b>$1,000,000</b> but delivers:</p>
+    <table>
+      <tr><th>Benefit</th><th>Value</th></tr>
+      <tr><td>Passive income</td><td>+$500/sec</td></tr>
+      <tr><td>Click power</td><td>+$200 per click</td></tr>
+      <tr><td>Rival debuff</td><td>All rival growth reduced 50%</td></tr>
+      <tr><td>Corner office</td><td>Golden office appears on floor plan</td></tr>
+    </table>
+    <p>Max Wellington is the key to dominating the leaderboard. Save up!</p>
+
+    <h2>🦈 JAKE HARPER — CHIEF REVENUE OFFICER</h2>
+    <p>Once your firm reaches <b>$250,000 lifetime revenue</b>, Jake Harper becomes available on the Sales tab.</p>
+    <p>He costs <b>$750,000</b> and adds a <b>+2.0x sales multiplier</b> — applied on top of the base multiplier from your other sales hires.</p>
+    <p>The Sales Team works differently from other upgrades. Instead of adding flat income, each sales hire <b>multiplies ALL your revenue</b> — both clicks and passive income.</p>
+    <table>
+      <tr><th>Sales Hire</th><th>Multiplier per hire</th><th>Cost</th></tr>
+      <tr><td>📞 Cold Caller</td><td>+0.1x</td><td>$500</td></tr>
+      <tr><td>🤝 Business Dev Manager</td><td>+0.15x</td><td>$3,000</td></tr>
+      <tr><td>📋 Account Manager</td><td>+0.2x</td><td>$12,000</td></tr>
+      <tr><td>📊 Sales Director</td><td>+0.3x</td><td>$60,000</td></tr>
+      <tr><td>🦈 Jake Harper (CRO)</td><td>+2.0x</td><td>$750,000</td></tr>
+    </table>
+    <p><b>Example:</b> With a base of 1.0x, plus 3 Cold Callers (+0.3x) and Brad (+2.0x), your total multiplier is <b>3.3x</b> — all clicks and passive income are tripled!</p>
+
+    <h2>🏆 MILESTONES</h2>
+    <table>
+      <tr><th>Revenue</th><th>Milestone</th></tr>
+      <tr><td>$100</td><td>First BAS Lodged</td></tr>
+      <tr><td>$1,000</td><td>Registered Pty Ltd</td></tr>
+      <tr><td>$10,000</td><td>Corner Office</td></tr>
+      <tr><td>$100,000</td><td>Big Four Adjacent</td></tr>
+      <tr><td>$250,000</td><td>🦈 Jake Harper Available</td></tr>
+      <tr><td>$500,000</td><td>🐐 Max Wellington Available</td></tr>
+      <tr><td>$1,000,000</td><td>Accounting Empire</td></tr>
+      <tr><td>$10,000,000</td><td>ASX IPO Ready</td></tr>
+      <tr><td>$100,000,000</td><td>Global Expansion</td></tr>
+      <tr><td>$500,000,000</td><td>Half a Billion!</td></tr>
+      <tr><td style="color:#b8860b;font-weight:700;">$1,000,000,000</td><td style="color:#b8860b;font-weight:700;">🏆 YOU WIN! Game complete!</td></tr>
+    </table>
+
+    <h2>⌨️ CONTROLS</h2>
+    <table>
+      <tr><th>Input</th><th>Action</th></tr>
+      <tr><td>Mouse click button</td><td>Lodge financials & tax returns</td></tr>
+      <tr><td>Spacebar</td><td>Lodge financials & tax returns</td></tr>
+      <tr><td>F1</td><td>Open this help guide</td></tr>
+      <tr><td>Click tabs</td><td>Switch between Dashboard, Upgrades, Staff, Clients, Sales, Rivals</td></tr>
+    </table>
+
+    <h2>🏆 WIN CONDITION</h2>
+    <p>The game ends when your firm reaches <b>$1,000,000,000 (one billion dollars)</b> in lifetime revenue.</p>
+    <p>When you hit $1B, a win screen appears showing:</p>
+    <table>
+      <tr><th>Stat</th><th>Description</th></tr>
+      <tr><td>⏱️ Total Time</td><td>How long it took you to reach $1B — compare with mates!</td></tr>
+      <tr><td>🖱️ Total Clicks</td><td>How many times you tapped</td></tr>
+      <tr><td>⚡ Peak Revenue/sec</td><td>Your highest ever passive income rate</td></tr>
+      <tr><td>💥 Peak $/Click</td><td>The most you ever earned from a single tap</td></tr>
+      <tr><td>💰 Revenue Breakdown</td><td>Percentage split between click revenue and passive revenue</td></tr>
+    </table>
+    <p>You can copy your result to share with other players and challenge them to beat your time! After winning you can restart for a new speed run.</p>
+
+    <h2>📝 AUSTRALIAN ACCOUNTING GLOSSARY</h2>
+    <table>
+      <tr><th>Term</th><th>Meaning</th></tr>
+      <tr><td>BAS</td><td>Business Activity Statement — quarterly tax report to the ATO</td></tr>
+      <tr><td>ATO</td><td>Australian Taxation Office</td></tr>
+      <tr><td>ASIC</td><td>Australian Securities & Investments Commission</td></tr>
+      <tr><td>GST</td><td>Goods & Services Tax (10%)</td></tr>
+      <tr><td>PAYG</td><td>Pay As You Go — tax withholding system</td></tr>
+      <tr><td>EOFY</td><td>End of Financial Year (June 30)</td></tr>
+      <tr><td>ABN</td><td>Australian Business Number</td></tr>
+      <tr><td>Pty Ltd</td><td>Proprietary Limited — private company structure</td></tr>
+      <tr><td>CA</td><td>Chartered Accountant</td></tr>
+      <tr><td>Franking Credits</td><td>Tax credits attached to dividends</td></tr>
+      <tr><td>MYOB</td><td>Mind Your Own Business — popular Aussie accounting software</td></tr>
+      <tr><td>ASX</td><td>Australian Securities Exchange</td></tr>
+    </table>
+  </div>
+  <div class="help-footer">
+    <button id="help-close-btn" onclick="closeHelp()">Close Help</button>
+  </div>
+</div>
+
+<!-- RESTART CONFIRM -->
+<div id="restart-confirm">
+  <div class="rc-title">
+    <span>⚠️ Confirm Restart</span>
+  </div>
+  <div class="rc-body">
+    <p>🚨 <b>Are you sure you want to restart?</b> 🚨</p>
+    <p>This will dissolve your firm, fire all staff (including Max Wellington), lose all clients, and reset your revenue to $0.</p>
+    <p style="color:var(--red-loss);font-weight:700;">This action cannot be undone!</p>
+    <div class="rc-buttons">
+      <button class="rc-btn danger" onclick="doRestart()">🔄 Restart Firm</button>
+      <button class="rc-btn" onclick="closeRestart()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- WIN SCREEN -->
+<div id="win-screen">
+  <div id="win-box">
+    <div class="win-title">🏆 CONGRATULATIONS — YOU WIN! 🏆</div>
+    <div class="win-body" id="win-body-content"></div>
+    <div class="win-footer">
+      <button class="win-footer-btn gold" onclick="closeWinAndRestart()">🔄 Play Again</button>
+      <button class="win-footer-btn" onclick="closeWin()">📊 Keep Playing</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════
+//  GAME STATE
+// ══════════════════════════════════════════════
+const G = {
+  money: 0, totalEarned: 0, totalClicks: 0, clientsServed: 0,
+  clickValue: 1, perSecond: 0, salesMultiplier: 1,
+  taxRushActive: false, taxRushMultiplier: 1,
+  crisisActive: false, crisisCostMult: 1, crisisName: '',
+  quarter: 1, year: 2026, quarterTime: 0,
+  milestones: [], lastTick: Date.now(),
+  eventTimer: 0, nextEventIn: 45 + Math.random() * 30,
+  notifQueue: [],
+  // Win tracking
+  startTime: Date.now(), gameWon: false,
+  peakRPS: 0, peakClickVal: 0,
+  clickRevenue: 0, passiveRevenue: 0,
+};
+
+// ══════════════════════════════════════════════
+//  RIVALS
+// ══════════════════════════════════════════════
+const rivals = [
+  { name: 'PwC Australia', icon: '🟠', revenue: 0, rate: 2, baseRate: 2, color: 'pwc' },
+  { name: 'KPMG', icon: '🔵', revenue: 0, rate: 1.5, baseRate: 1.5, color: 'kpmg' },
+  { name: 'Deloitte', icon: '🟢', revenue: 0, rate: 3, baseRate: 3, color: 'deloitte' },
+  { name: 'EY', icon: '🟡', revenue: 0, rate: 1.8, baseRate: 1.8, color: 'ey' },
+];
+
+function getRivalRank() {
+  const all = [...rivals.map(r => ({ name: r.name, rev: r.revenue, color: r.color, icon: r.icon })),
+               { name: 'YOUR FIRM', rev: G.totalEarned, color: 'you', icon: '⭐' }];
+  all.sort((a, b) => b.rev - a.rev);
+  return all;
+}
+
+// ══════════════════════════════════════════════
+//  UPGRADES
+// ══════════════════════════════════════════════
+const upgrades = [
+  { id: 'desk', name: 'Extra Desk', desc: 'A slightly wobbly Officeworks desk', baseCost: 10, costMult: 1.4, owned: 0, type: 'click', value: 1, category: 'office', icon: '🪑' },
+  { id: 'calculator', name: 'Casio Calculator', desc: 'For GST calculations, obviously', baseCost: 50, costMult: 1.5, owned: 0, type: 'click', value: 3, category: 'office', icon: '🧮' },
+  { id: 'printer', name: 'Laser Printer', desc: 'It jams. Always.', baseCost: 200, costMult: 1.6, owned: 0, type: 'passive', value: 1, category: 'office', icon: '🖨️' },
+  { id: 'copier', name: 'Industrial Copier', desc: 'Prints BAS forms by the ream', baseCost: 750, costMult: 1.5, owned: 0, type: 'passive', value: 4, category: 'office', icon: '📠' },
+  { id: 'server', name: 'File Server', desc: 'Runs MYOB at 2fps', baseCost: 3000, costMult: 1.6, owned: 0, type: 'passive', value: 15, category: 'office', icon: '🖥️' },
+  { id: 'meeting', name: 'Meeting Room', desc: '"Could have been a Teams call"', baseCost: 10000, costMult: 1.7, owned: 0, type: 'passive', value: 50, category: 'office', icon: '🏢' },
+  { id: 'intern', name: 'Work Experience Kid', desc: 'Gets flat whites. Sometimes files.', baseCost: 25, costMult: 1.35, owned: 0, type: 'passive', value: 0.5, category: 'staff', icon: '🧑‍🎓' },
+  { id: 'junior', name: 'Junior Accountant', desc: 'Fresh CA grad, full of hope', baseCost: 150, costMult: 1.5, owned: 0, type: 'passive', value: 2, category: 'staff', icon: '👔' },
+  { id: 'senior', name: 'Senior Accountant', desc: 'Hope replaced by spreadsheets', baseCost: 1500, costMult: 1.6, owned: 0, type: 'passive', value: 10, category: 'staff', icon: '🧑‍💼' },
+  { id: 'cpa', name: 'CA Partner', desc: 'Drives a Hilux. Eats lunch at desk.', baseCost: 8000, costMult: 1.7, owned: 0, type: 'passive', value: 40, category: 'staff', icon: '💼' },
+  { id: 'cfo', name: 'CFO', desc: 'Costs more than they save', baseCost: 50000, costMult: 1.8, owned: 0, type: 'both', value: 100, clickVal: 50, category: 'staff', icon: '👑' },
+  { id: 'sean', name: '\u2B50 Max Wellington \u2B50', desc: 'THE ULTIMATE ACCOUNTANT. Lodges BAS in his sleep. Legends say he reconciled the entire ATO database over a long weekend.', baseCost: 1000000, costMult: 2.5, owned: 0, type: 'both', value: 500, clickVal: 200, category: 'staff', icon: '🐐', isSean: true },
+  { id: 'freelancer', name: 'Sole Trader', desc: 'ABN and a dream', baseCost: 100, costMult: 1.4, owned: 0, type: 'passive', value: 3, category: 'clients', icon: '🎨' },
+  { id: 'smallbiz', name: 'Pty Ltd Client', desc: 'Mum & Dad small business', baseCost: 800, costMult: 1.55, owned: 0, type: 'passive', value: 8, category: 'clients', icon: '🏪' },
+  { id: 'corporate', name: 'ASX-Listed Account', desc: 'ASX 200 adjacent', baseCost: 5000, costMult: 1.65, owned: 0, type: 'passive', value: 30, category: 'clients', icon: '🏛️' },
+  { id: 'govt', name: 'Government Contract', desc: 'The ATO paperwork never ends', baseCost: 30000, costMult: 1.75, owned: 0, type: 'both', value: 80, clickVal: 25, category: 'clients', icon: '🏦' },
+  // Sales Team
+  { id: 'coldcaller', name: 'Cold Caller', desc: 'Dials 200 numbers a day. Gets hung up on 199 times.', baseCost: 500, costMult: 1.5, owned: 0, type: 'sales', value: 0.1, category: 'sales', icon: '📞' },
+  { id: 'bdm', name: 'Business Dev Manager', desc: 'Lives on LinkedIn. "Just circling back!"', baseCost: 3000, costMult: 1.55, owned: 0, type: 'sales', value: 0.15, category: 'sales', icon: '🤝' },
+  { id: 'accountmgr', name: 'Account Manager', desc: 'Keeps clients from leaving. Barely.', baseCost: 12000, costMult: 1.6, owned: 0, type: 'sales', value: 0.2, category: 'sales', icon: '📋' },
+  { id: 'salesdir', name: 'Sales Director', desc: 'Has a whiteboard with "PIPELINE" written on it', baseCost: 60000, costMult: 1.7, owned: 0, type: 'sales', value: 0.3, category: 'sales', icon: '📊' },
+  { id: 'brad', name: '\u2B50 Jake Harper — CRO \u2B50', desc: 'THE CHIEF REVENUE OFFICER. Closes deals in his sleep. Once sold an audit to the ATO themselves. His pipeline is a firehose.', baseCost: 750000, costMult: 3, owned: 0, type: 'sales', value: 2.0, category: 'sales', icon: '🦈', isBrad: true },
+];
+
+function getCost(u) {
+  return Math.floor(u.baseCost * Math.pow(u.costMult, u.owned) * G.crisisCostMult);
+}
+
+function buyUpgrade(id) {
+  const u = upgrades.find(x => x.id === id);
+  const cost = getCost(u);
+  if (G.money >= cost) {
+    G.money -= cost;
+    u.owned++;
+    recalc(); renderTab(); renderOffice(); checkMilestones();
+    if (u.isSean && u.owned === 1) {
+      queueNotif('🐐 MAX WELLINGTON HAS ENTERED THE BUILDING',
+        '\u2B50\u2B50\u2B50 LEGENDARY HIRE \u2B50\u2B50\u2B50<br><br>Max Wellington has joined your firm!<br><br>+$500/sec passive income<br>+$200 per click<br>Rival growth reduced by 50%!<br><br><i>"G\'day. Point me at those BAS lodgements."</i><br><br>The Big Four are trembling. PwC just called an emergency board meeting.');
+    }
+    if (u.isBrad && u.owned === 1) {
+      queueNotif('🦈 JAKE HARPER HAS ENTERED THE BUILDING',
+        '📈📈📈 LEGENDARY HIRE 📈📈📈<br><br>Jake Harper, Chief Revenue Officer, has joined your firm!<br><br>🦈 <b>SALES MULTIPLIER MASSIVE BOOST!</b><br>All revenue is now multiplied by Brad\'s sales power!<br><br><i>"G\'day legends. Let\'s absolutely smash this quarter. I\'ve already got three warm leads and a Pty Ltd begging to sign."</i><br><br>Your phone is ringing off the hook. LinkedIn is on fire.');
+    }
+  }
+}
+
+function recalc() {
+  let cps = 0, clickVal = 1, salesMult = 1;
+  upgrades.forEach(u => {
+    if (u.owned === 0) return;
+    if (u.type === 'passive') cps += u.value * u.owned;
+    if (u.type === 'click') clickVal += u.value * u.owned;
+    if (u.type === 'both') { cps += u.value * u.owned; clickVal += (u.clickVal || 0) * u.owned; }
+    if (u.type === 'sales') salesMult += u.value * u.owned;
+  });
+  G.perSecond = cps;
+  G.clickValue = clickVal;
+  G.salesMultiplier = salesMult;
+}
+
+// ══════════════════════════════════════════════
+//  ECONOMIC EVENTS
+// ══════════════════════════════════════════════
+const crisisEvents = [
+  { name: 'GFC 2.0', banner: '📉 GLOBAL FINANCIAL CRISIS 2.0! Upgrade costs 3x for 45 seconds!',
+    costMult: 3, earnMult: 1, duration: 45, cls: 'crisis',
+    popup: '📉 BREAKING: GFC 2.0 📉<br><br>Lehman Brothers has risen from the grave just to collapse again.<br>Markets are in freefall!<br><br>All upgrade costs <b>TRIPLED</b> for 45 seconds!<br><br>Accountants everywhere are stress-eating Tim Tams.' },
+  { name: 'Hyperinflation', banner: '💸 HYPERINFLATION! Upgrade costs 5x for 40 seconds!',
+    costMult: 5, earnMult: 1, duration: 40, cls: 'crisis',
+    popup: '💸 BREAKING: HYPERINFLATION 💸<br><br>The Reserve Bank has lost control!<br>A flat white now costs $47.<br><br>All upgrade costs <b>5x</b> for 40 seconds!<br><br>BAS lodgement fees are through the roof.' },
+  { name: 'ATO Audit Blitz', banner: '🔍 ATO AUDIT BLITZ! Upgrade costs 2x for 50 seconds!',
+    costMult: 2, earnMult: 1, duration: 50, cls: 'crisis',
+    popup: '🔍 ATO AUDIT BLITZ 🔍<br><br>The Australian Tax Office has launched a nationwide audit campaign!<br><br>All upgrade costs <b>DOUBLED</b> for 50 seconds!<br><br>Every accountant in the country is working overtime.' },
+  { name: 'Mining Boom', banner: '\u26CF\uFE0F MINING BOOM! All earnings 4x for 35 seconds!',
+    costMult: 1, earnMult: 4, duration: 35, cls: 'boom',
+    popup: '\u26CF\uFE0F MINING BOOM! \u26CF\uFE0F<br><br>Iron ore just hit $400/tonne!<br>Mining companies are throwing money at anyone with a calculator.<br><br>All earnings <b>4x</b> for 35 seconds!' },
+  { name: 'Property Bubble Pop', banner: '🏠 PROPERTY BUBBLE POP! Upgrade costs 4x for 35 seconds!',
+    costMult: 4, earnMult: 1, duration: 35, cls: 'crisis',
+    popup: '🏠 PROPERTY BUBBLE POP 🏠<br><br>Sydney median house price just hit $5 million...<br>then crashed 40% overnight.<br><br>All upgrade costs <b>4x</b> for 35 seconds!<br><br>Negative gearing claims are flooding in.' },
+  { name: 'Crypto Crash', banner: '₿ CRYPTO CRASH! Costs 3x but Revenue 2x for 40 seconds!',
+    costMult: 3, earnMult: 2, duration: 40, cls: 'crisis',
+    popup: '₿ CRYPTO CRASH ₿<br><br>Bitcoin just went to zero. Again.<br>Every crypto bro in Australia needs a tax accountant for loss write-offs.<br><br>Costs <b>3x</b> but earnings <b>2x</b> for 40 seconds!' },
+  { name: 'Government Stimulus', banner: '🏛️ GOVERNMENT STIMULUS! All earnings 3x for 40 seconds!',
+    costMult: 1, earnMult: 3, duration: 40, cls: 'boom',
+    popup: '🏛️ STIMULUS PACKAGE! 🏛️<br><br>Canberra is handing out grants like lollies at a school fete!<br><br>All earnings <b>3x</b> for 40 seconds!' },
+];
+
+function triggerCrisis() {
+  if (G.crisisActive || G.taxRushActive) return;
+  const evt = crisisEvents[Math.floor(Math.random() * crisisEvents.length)];
+  G.crisisActive = true;
+  G.crisisCostMult = evt.costMult;
+  G.crisisName = evt.name;
+  if (evt.earnMult > 1) { G.taxRushActive = true; G.taxRushMultiplier = evt.earnMult; }
+
+  const bar = document.getElementById('event-bar');
+  bar.textContent = evt.banner;
+  bar.className = evt.cls;
+  bar.style.display = 'block';
+  queueNotif('\u26A0\uFE0F ECONOMIC EVENT: ' + evt.name, evt.popup);
+
+  if (evt.costMult > 1) rivals.forEach(r => r.rate = r.baseRate * (0.3 + Math.random() * 0.5));
+  else if (evt.earnMult > 1) rivals.forEach(r => r.rate = r.baseRate * (1.5 + Math.random() * 1.5));
+
+  setTimeout(() => {
+    G.crisisActive = false; G.crisisCostMult = 1; G.crisisName = '';
+    G.taxRushActive = false; G.taxRushMultiplier = 1;
+    bar.style.display = 'none';
+    rivals.forEach(r => r.rate = r.baseRate);
+  }, evt.duration * 1000);
+}
+
+function triggerTaxRush() {
+  if (G.taxRushActive || G.crisisActive) return;
+  G.taxRushActive = true; G.taxRushMultiplier = 3;
+  const bar = document.getElementById('event-bar');
+  bar.textContent = '\u26A1 EOFY RUSH! All earnings 3x for 30 seconds! \u26A1';
+  bar.className = 'eofy';
+  bar.style.display = 'block';
+  queueNotif('\u26A1 EOFY RUSH!', 'End of Financial Year panic has set in!<br><br>Every business in Australia is scrambling to lodge.<br>All earnings <b>3x</b> for 30 seconds!');
+  setTimeout(() => {
+    G.taxRushActive = false; G.taxRushMultiplier = 1;
+    document.getElementById('event-bar').style.display = 'none';
+  }, 30000);
+}
+
+// ══════════════════════════════════════════════
+//  MILESTONES
+// ══════════════════════════════════════════════
+const milestoneList = [
+  { id: 'm1', at: 100, title: 'First BAS Lodged', msg: 'You lodged your first Business Activity Statement!<br>The ATO acknowledges your existence.' },
+  { id: 'm2', at: 1000, title: 'Registered Pty Ltd!', msg: 'You\'ve officially registered with ASIC.<br>The ATO knows your ABN now.' },
+  { id: 'm3', at: 10000, title: 'Corner Office', msg: 'You\'ve moved out of the garage!<br>Real walls. Real fluorescent lighting.' },
+  { id: 'm4', at: 100000, title: 'Big Four Adjacent', msg: 'PwC Australia called. They hung up, but still.<br>You\'re on their radar.' },
+  { id: 'm5', at: 500000, title: '🐐 Max Wellington Available!', msg: '🐐 LEGENDARY ACCOUNTANT UNLOCKED! 🐐<br><br>Word of your firm has reached the legendary Max Wellington.<br>He\'s willing to join... for <b>$1,000,000</b>.<br><br>Check the Staff tab!' },
+  { id: 'm5b', at: 250000, title: '🦈 Jake Harper Available!', msg: '🦈 LEGENDARY SALES LEADER UNLOCKED! 🦈<br><br>Jake Harper, Chief Revenue Officer, has heard about your firm.<br>He\'s willing to lead your sales team... for <b>$750,000</b>.<br><br>Check the Sales tab!' },
+  { id: 'm6', at: 1000000, title: 'Accounting Empire', msg: '🎉 ONE MILLION DOLLARYDOOS! 🎉<br>Your firm is now a national powerhouse.<br>H&R Block Australia is sweating.' },
+  { id: 'm7', at: 10000000, title: 'ASX IPO Ready', msg: 'Your firm is listing on the ASX!<br>Analysts from Martin Place are baffled but impressed.' },
+  { id: 'm8', at: 100000000, title: 'Global Expansion', msg: 'Your firm has opened offices in London, New York and Singapore!<br>The Big Four are now the Big Five.' },
+  { id: 'm9', at: 500000000, title: 'Half a Billion!', msg: '$500 MILLION!<br>You can almost taste the billion.<br>Keep pushing — the finish line is in sight!' },
+];
+
+function checkMilestones() {
+  milestoneList.forEach(m => {
+    if (G.totalEarned >= m.at && !G.milestones.includes(m.id)) {
+      G.milestones.push(m.id);
+      queueNotif(m.title, m.msg);
+      updateOfficeLevel();
+    }
+  });
+}
+
+function updateOfficeLevel() {
+  const levels = [[0,'Garage Office'],[1000,'Small Office Suite'],[10000,'Full Floor'],[100000,'Corporate Tower'],[1000000,'Downtown HQ'],[10000000,'Glass Skyscraper']];
+  let name = levels[0][1], lvl = 1;
+  levels.forEach((l,i) => { if (G.totalEarned >= l[0]) { name = l[1]; lvl = i+1; } });
+  document.getElementById('office-level').textContent = `Level ${lvl}: ${name}`;
+}
+
+// ══════════════════════════════════════════════
+//  NOTIFICATION QUEUE
+// ══════════════════════════════════════════════
+function queueNotif(title, msg) {
+  G.notifQueue.push({ title, msg });
+  if (document.getElementById('notification').style.display !== 'block') showNextNotif();
+}
+function showNextNotif() {
+  if (G.notifQueue.length === 0) return;
+  const n = G.notifQueue.shift();
+  document.getElementById('notif-title-text').textContent = '📢 ' + n.title;
+  document.getElementById('notif-message').innerHTML = n.msg;
+  document.getElementById('notification').style.display = 'block';
+}
+function closeNotif() {
+  document.getElementById('notification').style.display = 'none';
+  setTimeout(showNextNotif, 200);
+}
+
+// ══════════════════════════════════════════════
+//  TABS & RENDERING
+// ══════════════════════════════════════════════
+let currentTab = 'dashboard';
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+  renderTab();
+}
+function renderTab() {
+  const el = document.getElementById('sheet-content');
+  switch(currentTab) {
+    case 'dashboard': el.innerHTML = renderDashboard(); break;
+    case 'upgrades': el.innerHTML = renderUpgrades('office'); break;
+    case 'staff': el.innerHTML = renderUpgrades('staff'); break;
+    case 'clients': el.innerHTML = renderUpgrades('clients'); break;
+    case 'sales': el.innerHTML = renderUpgrades('sales'); break;
+    case 'rivals': el.innerHTML = renderRivals(); break;
+  }
+}
+
+function fmt(n) {
+  if (n >= 1e12) return (n/1e12).toFixed(2)+'T';
+  if (n >= 1e9) return (n/1e9).toFixed(2)+'B';
+  if (n >= 1e6) return (n/1e6).toFixed(2)+'M';
+  if (n >= 1e4) return (n/1e3).toFixed(2)+'K';
+  return n.toFixed(2);
+}
+
+function renderDashboard() {
+  const eff = G.taxRushActive ? G.taxRushMultiplier : 1;
+  const sm = G.salesMultiplier;
+  const totalMult = eff * sm;
+  const rank = getRivalRank();
+  const myPos = rank.findIndex(r => r.name === 'YOUR FIRM') + 1;
+  const hasSean = upgrades.find(u => u.id === 'sean')?.owned > 0;
+  const hasBrad = upgrades.find(u => u.id === 'brad')?.owned > 0;
+  return `<table class="sheet-table">
+    <colgroup><col width="30"><col width="200"><col width="120"><col width="140"><col></colgroup>
+    <tr><th></th><th>A</th><th>B</th><th>C</th><th>D</th></tr>
+    <tr><td class="row-header">1</td><td style="font-weight:700;font-size:13px;" colspan="4">📊 FINANCIAL DASHBOARD — FY${G.year}/${G.year+1} Q${G.quarter}</td></tr>
+    <tr><td class="row-header">2</td><td></td><td></td><td></td><td></td></tr>
+    <tr><td class="row-header">3</td><td style="font-weight:700;">CASH ON HAND</td><td class="cell-money cell-highlight" style="font-size:14px;">$${fmt(G.money)}</td><td style="color:#888;">▸ per click</td><td class="cell-money">$${fmt(G.clickValue * totalMult)}</td></tr>
+    <tr><td class="row-header">4</td><td style="font-weight:700;">REVENUE / SEC</td><td class="cell-money">$${fmt(G.perSecond * totalMult)}/s</td><td style="color:#888;">▸ event mult</td><td class="cell-center">${eff}x</td></tr>
+    <tr><td class="row-header">5</td><td style="font-weight:700;">LIFETIME REVENUE</td><td class="cell-money">$${fmt(G.totalEarned)}</td><td style="color:#888;">▸ sales mult</td><td class="cell-center ${sm>1?'cell-brad':''}">${sm.toFixed(1)}x</td></tr>
+    <tr><td class="row-header">6</td><td style="font-weight:700;">INDUSTRY RANK</td><td class="cell-center ${myPos===1?'cell-gold':''}" style="font-size:14px;">#${myPos} of 5</td><td style="color:#888;">▸ cost mult</td><td class="cell-center ${G.crisisCostMult>1?'cell-red':''}">${G.crisisCostMult}x</td></tr>
+    ${G.crisisActive ? `<tr><td class="row-header">7</td><td colspan="4" style="color:var(--red-loss);font-weight:700;text-align:center;">\u26A0\uFE0F ACTIVE: ${G.crisisName}</td></tr>` : `<tr><td class="row-header">7</td><td></td><td></td><td></td><td></td></tr>`}
+    ${hasSean ? `<tr><td class="row-header">8</td><td colspan="4" class="cell-sean" style="text-align:center;">🐐 Max Wellington is on the team! Rivals quake in fear. 🐐</td></tr>` : `<tr><td class="row-header">8</td><td></td><td></td><td></td><td></td></tr>`}
+    ${hasBrad ? `<tr><td class="row-header">9</td><td colspan="4" class="cell-brad" style="text-align:center;">🦈 Jake Harper is crushing the sales pipeline! Revenue ${sm.toFixed(1)}x! 🦈</td></tr>` : `<tr><td class="row-header">9</td><td></td><td></td><td></td><td></td></tr>`}
+    <tr><td class="row-header">10</td><td style="font-weight:700;" colspan="4">📋 ASSET SUMMARY</td></tr>
+    <tr><td class="row-header">11</td><td style="font-weight:600;background:var(--cell-header)">Asset</td><td style="font-weight:600;background:var(--cell-header)">Qty</td><td style="font-weight:600;background:var(--cell-header)">Output</td><td style="font-weight:600;background:var(--cell-header)">Type</td></tr>
+    ${upgrades.filter(u => u.owned > 0).map((u, i) => `
+    <tr><td class="row-header">${12+i}</td><td class="${u.isSean?'cell-sean':''}${u.isBrad?'cell-brad':''}">${u.icon} ${u.name}</td><td class="cell-center">${u.owned}</td><td class="cell-money">${u.type==='sales'?u.value*u.owned+'x mult':'$'+fmt(u.type==='click'? u.value*u.owned : u.type==='both'? (u.value+(u.clickVal||0))*u.owned : u.value*u.owned)}</td><td class="cell-center">${u.type==='click'?'per click':u.type==='passive'?'per sec':u.type==='sales'?'sales mult':'hybrid'}</td></tr>
+    `).join('')}
+    ${upgrades.filter(u=>u.owned>0).length===0 ? '<tr><td class="row-header">12</td><td colspan="4" style="color:#888;text-align:center;">No assets yet. Visit the Upgrades tab!</td></tr>' : ''}
+  </table>`;
+}
+
+function renderUpgrades(category) {
+  const items = upgrades.filter(u => u.category === category);
+  const catNames = { office: '🪑 OFFICE EQUIPMENT', staff: '👔 STAFF DIRECTORY', clients: '📁 CLIENT PORTFOLIO', sales: '📈 SALES TEAM' };
+  const actionLabel = { office: 'Buy', staff: 'Hire', clients: 'Acquire', sales: 'Recruit' };
+  const actionColHeader = { office: 'Purchase', staff: 'Recruit', clients: 'Sign', sales: 'Enlist' };
+  return `<table class="sheet-table">
+    <colgroup><col width="30"><col width="28"><col width="160"><col><col width="55"><col width="90"><col width="110"></colgroup>
+    <tr><th></th><th></th><th>A</th><th>B</th><th>C</th><th>D</th><th>E</th></tr>
+    <tr><td class="row-header">1</td><td></td><td style="font-weight:700;font-size:13px;" colspan="5">${catNames[category]}</td></tr>
+    ${category==='sales' ? `<tr><td class="row-header"></td><td></td><td colspan="5" style="color:#336699;font-weight:600;">Current Sales Multiplier: <span style="color:var(--green-money);font-size:13px;">${G.salesMultiplier.toFixed(1)}x</span> — applies to ALL revenue (clicks + passive)</td></tr>` : ''}
+    ${G.crisisActive && G.crisisCostMult > 1 ? `<tr><td class="row-header"></td><td></td><td colspan="5" style="color:var(--red-loss);font-weight:700;">\u26A0\uFE0F ${G.crisisName} — costs ${G.crisisCostMult}x!</td></tr>` : ''}
+    <tr>
+      <td class="row-header">2</td><td style="background:var(--cell-header)"></td>
+      <td style="font-weight:600;background:var(--cell-header)">Item</td>
+      <td style="font-weight:600;background:var(--cell-header)">Description</td>
+      <td style="font-weight:600;background:var(--cell-header)">Qty</td>
+      <td style="font-weight:600;background:var(--cell-header)">Cost</td>
+      <td style="font-weight:600;background:var(--cell-header)">${actionColHeader[category]}</td>
+    </tr>
+    ${items.map((u, i) => {
+      const cost = getCost(u);
+      const canBuy = G.money >= cost;
+      const s = u.isSean;
+      const b = u.isBrad;
+      return `<tr ${s?'class="cell-sean"':''}${b?'class="cell-brad"':''}>
+        <td class="row-header">${3+i}</td>
+        <td class="cell-center" style="font-size:${(s||b)?'16px':'11px'}">${u.icon}</td>
+        <td style="font-weight:600;${s?'color:#8B6914;font-size:12px;':''}${b?'color:#1a5fa0;font-size:12px;':''}">${u.name}</td>
+        <td style="color:#555;${(s||b)?'font-style:italic;':''}">${u.desc}</td>
+        <td class="cell-center">${u.owned}</td>
+        <td class="${canBuy?'cell-money':'cell-red'}">${G.crisisCostMult>1&&!s&&!b?'\u26A0\uFE0F':''}$${fmt(cost)}</td>
+        <td><button class="buy-btn ${s?'sean-btn':''}${b?'brad-btn':''}" onclick="buyUpgrade('${u.id}')" ${canBuy?'':'disabled'}>${actionLabel[category]} ${s?'🐐':b?'🦈':'['+u.owned+']'}</button></td>
+      </tr>`;
+    }).join('')}
+    <tr><td class="row-header">${3+items.length}</td><td colspan="6"></td></tr>
+    <tr><td class="row-header">${4+items.length}</td><td></td><td colspan="2" style="color:#888;">TIP: ${category==='office'?'Desks & calculators boost click power.':category==='staff'?'Staff earn revenue passively. Hire Max Wellington to dominate!':category==='sales'?'Sales team multiplies ALL revenue. Recruit Jake Harper to go nuclear!':'More clients = more revenue streams.'}</td><td colspan="3"></td></tr>
+  </table>`;
+}
+
+function renderRivals() {
+  const ranked = getRivalRank();
+  const maxRev = Math.max(...ranked.map(r => r.rev), 1);
+  const hasSean = upgrades.find(u=>u.id==='sean')?.owned > 0;
+  return `<table class="sheet-table">
+    <colgroup><col width="30"><col width="40"><col width="180"><col><col width="120"></colgroup>
+    <tr><th></th><th>#</th><th>A</th><th>B</th><th>C</th></tr>
+    <tr><td class="row-header">1</td><td></td><td style="font-weight:700;font-size:13px;" colspan="3">\u2694\uFE0F INDUSTRY LEADERBOARD — Australian Accounting Firms</td></tr>
+    <tr><td class="row-header">2</td><td style="background:var(--cell-header);font-weight:600;text-align:center">#</td>
+      <td style="font-weight:600;background:var(--cell-header)">Firm</td>
+      <td style="font-weight:600;background:var(--cell-header)">Market Share</td>
+      <td style="font-weight:600;background:var(--cell-header)">Revenue</td></tr>
+    ${ranked.map((r, i) => {
+      const isYou = r.name === 'YOUR FIRM';
+      const pct = Math.max((r.rev / maxRev) * 100, 2);
+      return `<tr style="${isYou?'background:#e8f4ff;font-weight:700;':''}">
+        <td class="row-header">${3+i}</td>
+        <td class="cell-center" style="font-size:14px;">${i===0?'🥇':i===1?'🥈':i===2?'🥉':'  '+(i+1)}</td>
+        <td>${r.icon} ${r.name}${isYou?' (YOU)':''}</td>
+        <td><div class="rival-bar"><div class="rival-bar-fill rival-${r.color}" style="width:${pct}%"></div></div></td>
+        <td class="cell-money">$${fmt(r.rev)}</td>
+      </tr>`;
+    }).join('')}
+    <tr><td class="row-header">${3+ranked.length}</td><td colspan="4"></td></tr>
+    <tr><td class="row-header">${4+ranked.length}</td><td></td><td colspan="3" style="font-weight:700;">📊 COMPETITIVE INTELLIGENCE</td></tr>
+    <tr><td class="row-header">${5+ranked.length}</td><td></td><td colspan="3" style="color:#555;">Rival firms grow automatically. Outpace them by upgrading staff & acquiring clients!</td></tr>
+    <tr><td class="row-header">${6+ranked.length}</td><td></td><td colspan="3" style="color:#555;">During economic crises, rivals slow down — use it to your advantage!</td></tr>
+    <tr><td class="row-header">${7+ranked.length}</td><td></td><td colspan="3" style="color:#555;">PwC is aggressive. Keep an eye on Deloitte — they\'re the fastest grower.</td></tr>
+    ${hasSean ? `<tr><td class="row-header">${8+ranked.length}</td><td></td><td colspan="3" class="cell-sean">🐐 Max Wellington on your team — rival growth reduced by 50%!</td></tr>` : ''}
+  </table>`;
+}
+
+// ══════════════════════════════════════════════
+//  CLICKING
+// ══════════════════════════════════════════════
+document.getElementById('big-click').addEventListener('click', (e) => {
+  if (G.gameWon) return;
+  const eff = G.taxRushActive ? G.taxRushMultiplier : 1;
+  const earned = G.clickValue * eff * G.salesMultiplier;
+  G.money += earned; G.totalEarned += earned; G.totalClicks++; G.clientsServed++;
+  G.clickRevenue += earned;
+  if (earned > G.peakClickVal) G.peakClickVal = earned;
+  renderTab(); showFloat(e.clientX||e.pageX, e.clientY||e.pageY, earned); updateStatus();
+  checkWin();
+});
+document.addEventListener('keydown', (e) => {
+  if (e.code === 'Space' && document.getElementById('notification').style.display !== 'block') {
+    e.preventDefault();
+    if (G.gameWon) return;
+    const btn = document.getElementById('big-click');
+    const rect = btn.getBoundingClientRect();
+    const eff = G.taxRushActive ? G.taxRushMultiplier : 1;
+    const earned = G.clickValue * eff * G.salesMultiplier;
+    G.money += earned; G.totalEarned += earned; G.totalClicks++; G.clientsServed++;
+    G.clickRevenue += earned;
+    if (earned > G.peakClickVal) G.peakClickVal = earned;
+    renderTab(); showFloat(rect.left+rect.width/2, rect.top, earned); updateStatus();
+    btn.style.borderStyle = 'inset';
+    setTimeout(() => btn.style.borderStyle = 'outset', 80);
+    checkWin();
+  }
+});
+function showFloat(x, y, amount) {
+  const el = document.createElement('div');
+  el.className = 'click-float'; el.textContent = `+$${fmt(amount)}`;
+  el.style.left = x+'px'; el.style.top = y+'px';
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1000);
+}
+
+// ══════════════════════════════════════════════
+//  OFFICE RENDERING
+// ══════════════════════════════════════════════
+const canvas = document.getElementById('office-canvas');
+const ctx = canvas.getContext('2d');
+function resizeCanvas() {
+  const wrap = document.getElementById('office-canvas-wrap');
+  canvas.width = wrap.clientWidth; canvas.height = wrap.clientHeight; renderOffice();
+}
+function renderOffice() {
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#e8e0d0'; ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle='#d8d0c0'; ctx.lineWidth=1;
+  for(let x=0;x<W;x+=24){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+  for(let y=0;y<H;y+=24){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+  ctx.fillStyle='#d0ccc0';ctx.fillRect(0,0,W,30);
+  ctx.fillStyle='#a8a498';ctx.fillRect(0,28,W,3);
+
+  const totalStaff=upgrades.filter(u=>u.category==='staff').reduce((s,u)=>s+u.owned,0);
+  const totalDesks=(upgrades.find(u=>u.id==='desk')?.owned||0)+1;
+  const hasPrinter=upgrades.find(u=>u.id==='printer')?.owned>0;
+  const hasCopier=upgrades.find(u=>u.id==='copier')?.owned>0;
+  const hasServer=upgrades.find(u=>u.id==='server')?.owned>0;
+  const meetingRooms=upgrades.find(u=>u.id==='meeting')?.owned||0;
+  const hasSean=upgrades.find(u=>u.id==='sean')?.owned>0;
+
+  const maxDesksPerRow=Math.floor((W-30)/65);
+  for(let i=0;i<Math.min(totalDesks,20);i++){
+    const row=Math.floor(i/maxDesksPerRow),col=i%maxDesksPerRow;
+    drawDesk(20+col*65,50+row*72,i<1+totalStaff);
+  }
+  if(hasPrinter)drawPrinter(W-55,50);
+  if(hasCopier)drawCopier(W-55,120);
+  if(hasServer)drawServer(W-55,190);
+  for(let i=0;i<Math.min(meetingRooms,3);i++)drawMeetingRoom(15+i*110,H-70);
+
+  if(hasSean){
+    const sx=W-125,sy=H-85;
+    ctx.fillStyle='#fff8dc';ctx.fillRect(sx-5,sy-30,115,105);
+    ctx.strokeStyle='#daa520';ctx.lineWidth=2;ctx.strokeRect(sx-5,sy-30,115,105);
+    ctx.fillStyle='#8B6914';ctx.font='bold 9px "IBM Plex Mono",monospace';
+    ctx.fillText('🐐 SEAN\'S OFFICE',sx,sy-20);
+    ctx.fillStyle='#6b4226';ctx.fillRect(sx+5,sy,60,32);
+    ctx.fillStyle='#8b5e3c';ctx.fillRect(sx+7,sy+2,56,28);
+    ctx.fillStyle='#222';ctx.fillRect(sx+10,sy-14,18,14);ctx.fillRect(sx+32,sy-14,18,14);
+    ctx.fillStyle='#44aa88';ctx.fillRect(sx+12,sy-12,14,10);ctx.fillRect(sx+34,sy-12,14,10);
+    ctx.fillStyle='#ffd700';ctx.fillRect(sx+55,sy-10,8,10);ctx.fillRect(sx+53,sy-12,12,4);
+    const pulse=Math.sin(Date.now()/300)*2;
+    ctx.fillStyle='rgba(255,215,0,0.15)';
+    ctx.beginPath();ctx.arc(sx+30,sy-26+pulse,14,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#f0c8a0';
+    ctx.beginPath();ctx.arc(sx+30,sy-26+pulse,7,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#443';ctx.fillRect(sx+23,sy-34+pulse,14,5);
+    ctx.fillStyle='#8B6914';ctx.fillRect(sx+18,sy+36,24,16);
+    ctx.fillStyle='#6b4226';ctx.fillRect(sx+16,sy+32,28,6);
+  }
+
+  for(let wx=40;wx<W-40;wx+=80){
+    ctx.fillStyle='#b8d8f0';ctx.fillRect(wx,4,40,20);
+    ctx.strokeStyle='#8898a0';ctx.lineWidth=1.5;ctx.strokeRect(wx,4,40,20);
+    ctx.beginPath();ctx.moveTo(wx+20,4);ctx.lineTo(wx+20,24);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(wx,14);ctx.lineTo(wx+40,14);ctx.stroke();
+  }
+}
+function drawDesk(x,y,occ){
+  ctx.fillStyle='#a08060';ctx.fillRect(x,y,50,30);
+  ctx.fillStyle='#c8a070';ctx.fillRect(x+2,y+2,46,26);
+  ctx.fillStyle='#806040';ctx.fillRect(x+2,y+30,4,8);ctx.fillRect(x+44,y+30,4,8);
+  ctx.fillStyle='#333';ctx.fillRect(x+15,y-14,22,16);
+  ctx.fillStyle='#4488aa';ctx.fillRect(x+17,y-12,18,12);
+  ctx.fillStyle='#555';ctx.fillRect(x+23,y+2,6,4);
+  ctx.fillStyle=occ?'#3355aa':'#888';ctx.fillRect(x+16,y+34,18,14);
+  ctx.fillStyle=occ?'#2244aa':'#777';ctx.fillRect(x+14,y+30,22,6);
+  if(occ){ctx.fillStyle='#f0c8a0';ctx.beginPath();ctx.arc(x+25,y-22,6,0,Math.PI*2);ctx.fill();ctx.fillStyle='#554';ctx.fillRect(x+19,y-28,12,4);}
+}
+function drawPrinter(x,y){ctx.fillStyle='#ddd';ctx.fillRect(x,y,35,22);ctx.fillStyle='#bbb';ctx.fillRect(x+2,y+2,31,5);ctx.fillStyle='#fff';ctx.fillRect(x+5,y+16,25,4);ctx.fillStyle=Date.now()%1000<500?'#0f0':'#080';ctx.fillRect(x+28,y+9,4,4);}
+function drawCopier(x,y){ctx.fillStyle='#ccc';ctx.fillRect(x,y,38,30);ctx.fillStyle='#999';ctx.fillRect(x+3,y+3,32,10);ctx.fillStyle='#eee';ctx.fillRect(x+5,y+18,20,8);ctx.fillStyle='#aaa';ctx.fillRect(x+27,y+18,8,8);}
+function drawServer(x,y){for(let i=0;i<3;i++){ctx.fillStyle='#444';ctx.fillRect(x,y+i*15,36,12);ctx.fillStyle='#333';ctx.fillRect(x+2,y+i*15+2,32,8);ctx.fillStyle=i===0?'#0f0':(Date.now()%(700+i*300)<350?'#0f0':'#040');ctx.fillRect(x+28,y+i*15+4,3,3);ctx.fillStyle='#f80';ctx.fillRect(x+24,y+i*15+4,3,3);}}
+function drawMeetingRoom(x,y){ctx.fillStyle='#8b7355';ctx.fillRect(x,y+10,90,30);ctx.fillStyle='#a08060';ctx.fillRect(x+2,y+12,86,26);ctx.fillStyle='#3355aa';ctx.fillRect(x+10,y,14,10);ctx.fillRect(x+35,y,14,10);ctx.fillRect(x+60,y,14,10);ctx.fillRect(x+10,y+42,14,10);ctx.fillRect(x+35,y+42,14,10);ctx.fillRect(x+60,y+42,14,10);}
+
+// ══════════════════════════════════════════════
+//  STATUS & FORMULA
+// ══════════════════════════════════════════════
+function updateStatus(){
+  const rank=getRivalRank();
+  const myPos=rank.findIndex(r=>r.name==='YOUR FIRM')+1;
+  document.getElementById('status-left').textContent=`Rank: #${myPos}/5`;
+  document.getElementById('status-center').textContent=`Clients: ${G.clientsServed}`;
+  document.getElementById('status-right').textContent=`FY ${G.year}/${G.year+1} | Q${G.quarter}`;
+}
+const formulaQuips=[
+  '=SUM(BAS!A1:A\u221E) + FLAT_WHITE()',
+  '=IF(Sleep>0, "You\'re doing it wrong", LODGE_RETURNS())',
+  '=VLOOKUP("happiness", Career, 2, FALSE) \u2192 #N/A',
+  '=ROUND(GST_Credits, -6)',
+  '=CONCATENATE("EOFY"," ","Never"," ","Ends")',
+  '=NPV(0.08, Tears, Long_Blacks, PAYG_Withholding)',
+  '=INDEX(Life, MATCH("Weekend", ATO_Deadlines, 0)) \u2192 #REF!',
+  '=SUMPRODUCT(Invoices, Franking_Credits)',
+  '=PMT(Ambition, \u221E, -Superannuation)',
+  '=IFERROR(VLOOKUP("Tax Refund",MyOB,2,0),"See Accountant")',
+  '=ABS(GST_Collected) - ABS(GST_Paid) + DESPAIR()',
+  '=IF(Sean_Wellington="Hired", "Victory", "Keep Trying")',
+  '=RANK(YourFirm, AllFirms, 0) & " \u2014 Outpace PwC!"',
+  '=IF(Brad_Harper="Recruited", REVENUE()*10, "Hire Brad!")',
+  '=FORECAST(Revenue, Brad_Pipeline, Quarters) \u2192 \u221E',
+];
+function cycleFormula(){document.getElementById('formula-bar').textContent=formulaQuips[Math.floor(Math.random()*formulaQuips.length)];}
+setInterval(cycleFormula,5000);
+
+// ══════════════════════════════════════════════
+//  GAME LOOP
+// ══════════════════════════════════════════════
+function tick(){
+  const now=Date.now(),dt=(now-G.lastTick)/1000;
+  G.lastTick=now;
+
+  if (!G.gameWon) {
+    const eff=G.taxRushActive?G.taxRushMultiplier:1;
+    const currentRPS=G.perSecond*eff*G.salesMultiplier;
+    if(currentRPS>G.peakRPS) G.peakRPS=currentRPS;
+    const earned=currentRPS*dt;
+    if(earned>0){
+      G.money+=earned;G.totalEarned+=earned;G.passiveRevenue+=earned;
+      G.clientsServed+=Math.floor(dt*0.3*upgrades.filter(u=>u.category==='staff').reduce((s,u)=>s+u.owned,0));
+    }
+
+    const hasSean=upgrades.find(u=>u.id==='sean')?.owned>0;
+    const seanDebuff=hasSean?0.5:1;
+    rivals.forEach(r=>{
+      const timeScale=1+G.totalEarned*0.000001;
+      r.revenue+=r.rate*timeScale*seanDebuff*dt;
+    });
+
+    G.quarterTime+=dt;
+    if(G.quarterTime>=120){
+      G.quarterTime=0;G.quarter++;
+      if(G.quarter>4){G.quarter=1;G.year++;}
+      if(G.quarter===4&&G.totalEarned>500)triggerTaxRush();
+      updateStatus();
+    }
+
+    G.eventTimer+=dt;
+    if(G.eventTimer>=G.nextEventIn&&G.totalEarned>200){
+      G.eventTimer=0;
+      G.nextEventIn=50+Math.random()*40;
+      triggerCrisis();
+    }
+
+    checkWin();
+  }
+
+  renderTab();renderOffice();updateStatus();checkMilestones();
+  requestAnimationFrame(tick);
+}
+
+// ══════════════════════════════════════════════
+//  DROPDOWN MENUS
+// ══════════════════════════════════════════════
+function toggleMenu(id) {
+  const menu = document.getElementById(id);
+  const wasOpen = menu.classList.contains('open');
+  closeMenus();
+  if (!wasOpen) menu.classList.add('open');
+}
+function closeMenus() {
+  document.querySelectorAll('.dropdown').forEach(d => d.classList.remove('open'));
+}
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.menu-item')) closeMenus();
+});
+
+// ══════════════════════════════════════════════
+//  HELP GUIDE
+// ══════════════════════════════════════════════
+function showHelp() {
+  document.getElementById('help-modal').style.display = 'block';
+}
+function closeHelp() {
+  document.getElementById('help-modal').style.display = 'none';
+}
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'F1') { e.preventDefault(); showHelp(); }
+  if (e.key === 'Escape') { closeHelp(); closeRestart(); }
+});
+
+// ══════════════════════════════════════════════
+//  RESTART
+// ══════════════════════════════════════════════
+function showRestartConfirm() {
+  document.getElementById('restart-confirm').style.display = 'block';
+}
+function closeRestart() {
+  document.getElementById('restart-confirm').style.display = 'none';
+}
+function doRestart() {
+  closeRestart();
+  G.money = 0; G.totalEarned = 0; G.totalClicks = 0; G.clientsServed = 0;
+  G.clickValue = 1; G.perSecond = 0; G.salesMultiplier = 1;
+  G.taxRushActive = false; G.taxRushMultiplier = 1;
+  G.crisisActive = false; G.crisisCostMult = 1; G.crisisName = '';
+  G.quarter = 1; G.year = 2026; G.quarterTime = 0;
+  G.milestones = []; G.eventTimer = 0; G.nextEventIn = 45 + Math.random() * 30;
+  G.notifQueue = [];
+  G.startTime = Date.now(); G.gameWon = false;
+  G.peakRPS = 0; G.peakClickVal = 0;
+  G.clickRevenue = 0; G.passiveRevenue = 0;
+  upgrades.forEach(u => u.owned = 0);
+  rivals.forEach(r => { r.revenue = 0; r.rate = r.baseRate; });
+  document.getElementById('event-bar').style.display = 'none';
+  document.getElementById('notification').style.display = 'none';
+  recalc(); updateOfficeLevel(); renderTab(); renderOffice(); updateStatus();
+  queueNotif('🔄 Firm Dissolved & Restarted',
+    'You\'ve shut down the old firm and started fresh.<br><br>New Tax Agent license. A clean spreadsheet. The garage office awaits.<br><br>The Big Four breathe a sigh of relief... for now.');
+}
+
+// ══════════════════════════════════════════════
+//  ABOUT
+// ══════════════════════════════════════════════
+function showAbout() {
+  queueNotif('ℹ️ About TaxClicker Pro™ 98',
+    '<b>TaxClicker Pro™ 98</b><br>Enterprise Accounting Simulator<br><br>Version 1.0.3 (Build 1998.04.15)<br><br>© 2026 TaxClicker Pty Ltd<br>ABN: 69 420 133 742<br><br>Powered by MYOB™-compatible engine<br>ATO Compliance Rating: ⭐⭐⭐⭐⭐<br><br><i>"The spreadsheet is always right."</i>');
+}
+
+// ══════════════════════════════════════════════
+//  WIN CONDITION — $1 BILLION
+// ══════════════════════════════════════════════
+function checkWin() {
+  if (G.gameWon) return;
+  if (G.totalEarned >= 1e9) {
+    G.gameWon = true;
+    showWinScreen();
+  }
+}
+
+function fmtTime(ms) {
+  const totalSec = Math.floor(ms / 1000);
+  const hrs = Math.floor(totalSec / 3600);
+  const mins = Math.floor((totalSec % 3600) / 60);
+  const secs = totalSec % 60;
+  if (hrs > 0) return hrs + 'h ' + mins + 'm ' + secs + 's';
+  if (mins > 0) return mins + 'm ' + secs + 's';
+  return secs + 's';
+}
+
+function showWinScreen() {
+  const elapsed = Date.now() - G.startTime;
+  const clickPct = G.totalEarned > 0 ? (G.clickRevenue / G.totalEarned * 100) : 0;
+  const passivePct = 100 - clickPct;
+  const rank = getRivalRank();
+  const myPos = rank.findIndex(r => r.name === 'YOUR FIRM') + 1;
+  const hasSean = upgrades.find(u => u.id === 'sean')?.owned > 0;
+  const hasBrad = upgrades.find(u => u.id === 'brad')?.owned > 0;
+
+  document.getElementById('win-body-content').innerHTML = 
+    '<div class="win-hero">' +
+      '<div class="win-trophy">🏆🎉🏆</div>' +
+      '<div class="win-headline">YOUR FIRM HIT $1 BILLION REVENUE!</div>' +
+      '<div class="win-time">' + fmtTime(elapsed) + '</div>' +
+      '<div style="font-size:12px;color:#666;margin-top:4px;">Time to $1B — challenge your mates to beat it!</div>' +
+    '</div>' +
+
+    '<h2>⏱️ SPEED RUN RESULT</h2>' +
+    '<table>' +
+      '<tr><th>Metric</th><th style="text-align:right">Result</th></tr>' +
+      '<tr><td>⏱️ Total Time</td><td class="stat-val">' + fmtTime(elapsed) + '</td></tr>' +
+      '<tr><td>🏆 Final Industry Rank</td><td class="stat-val">#' + myPos + ' of 5</td></tr>' +
+      '<tr><td>💰 Final Cash on Hand</td><td class="stat-val">$' + fmt(G.money) + '</td></tr>' +
+    '</table>' +
+
+    '<h2>📊 PERFORMANCE STATS</h2>' +
+    '<table>' +
+      '<tr><th>Stat</th><th style="text-align:right">Value</th></tr>' +
+      '<tr><td>🖱️ Total Clicks / Taps</td><td class="stat-val">' + G.totalClicks.toLocaleString() + '</td></tr>' +
+      '<tr><td>⚡ Peak Revenue/sec</td><td class="stat-val">$' + fmt(G.peakRPS) + '/s</td></tr>' +
+      '<tr><td>💥 Peak $ per Click</td><td class="stat-val">$' + fmt(G.peakClickVal) + '</td></tr>' +
+      '<tr><td>📈 Final Sales Multiplier</td><td class="stat-val">' + G.salesMultiplier.toFixed(1) + 'x</td></tr>' +
+      '<tr><td>👥 Clients Served</td><td class="stat-val">' + G.clientsServed.toLocaleString() + '</td></tr>' +
+    '</table>' +
+
+    '<h2>💰 REVENUE BREAKDOWN</h2>' +
+    '<table>' +
+      '<tr><th>Source</th><th style="text-align:right">Amount</th><th style="text-align:right">%</th></tr>' +
+      '<tr><td>🖱️ Click / Tap Revenue</td><td class="stat-val">$' + fmt(G.clickRevenue) + '</td><td class="stat-val">' + clickPct.toFixed(1) + '%</td></tr>' +
+      '<tr><td>⚙️ Passive Revenue</td><td class="stat-val">$' + fmt(G.passiveRevenue) + '</td><td class="stat-val">' + passivePct.toFixed(1) + '%</td></tr>' +
+      '<tr><td style="font-weight:700">TOTAL</td><td class="stat-val" style="font-size:12px">$' + fmt(G.totalEarned) + '</td><td class="stat-val">100%</td></tr>' +
+    '</table>' +
+    '<div style="margin:6px 0">' +
+      '<div class="win-bar-wrap">' +
+        '<div class="win-bar-click" style="width:' + clickPct + '%"></div>' +
+        '<div class="win-bar-passive" style="width:' + passivePct + '%"></div>' +
+        '<div class="win-bar-label">🖱️ Clicks ' + clickPct.toFixed(0) + '% &nbsp;|&nbsp; ⚙️ Passive ' + passivePct.toFixed(0) + '%</div>' +
+      '</div>' +
+    '</div>' +
+
+    '<h2>🏅 LEGENDARY HIRES</h2>' +
+    '<table>' +
+      '<tr><td>🐐 Max Wellington</td><td class="stat-val">' + (hasSean ? '✅ Hired' : '❌ Not Hired') + '</td></tr>' +
+      '<tr><td>🦈 Jake Harper</td><td class="stat-val">' + (hasBrad ? '✅ Recruited' : '❌ Not Recruited') + '</td></tr>' +
+    '</table>' +
+
+    '<h2>🎯 SHARE YOUR TIME</h2>' +
+    '<div style="background:#f8f8f0;border:1px inset var(--win-dark);padding:10px;font-family:VT323,monospace;font-size:14px;text-align:center;margin:6px 0;letter-spacing:0.5px;cursor:pointer;" onclick="copyResult()" title="Tap to copy!">' +
+      '🏆 TaxClicker Pro™ 98 — $1B in <b>' + fmtTime(elapsed) + '</b><br>' +
+      G.totalClicks.toLocaleString() + ' taps | Peak $' + fmt(G.peakRPS) + '/s | ' + clickPct.toFixed(0) + '% tap / ' + passivePct.toFixed(0) + '% passive<br>' +
+      (hasSean ? '🐐 ' : '') + (hasBrad ? '🦈 ' : '') + 'Can you beat my time?' +
+    '</div>' +
+    '<div id="copy-status" style="text-align:center;font-size:10px;color:#888;">Tap the box above to copy your result!</div>';
+
+  document.getElementById('win-screen').classList.add('show');
+}
+
+function copyResult() {
+  const hasSean = upgrades.find(u => u.id === 'sean')?.owned > 0;
+  const hasBrad = upgrades.find(u => u.id === 'brad')?.owned > 0;
+  const elapsed = Date.now() - G.startTime;
+  const clickPct = G.totalEarned > 0 ? (G.clickRevenue / G.totalEarned * 100) : 0;
+  const passivePct = 100 - clickPct;
+  const text = '🏆 TaxClicker Pro™ 98 — $1B in ' + fmtTime(elapsed) + '\n' +
+    G.totalClicks.toLocaleString() + ' taps | Peak $' + fmt(G.peakRPS) + '/s | ' + clickPct.toFixed(0) + '% tap / ' + passivePct.toFixed(0) + '% passive\n' +
+    (hasSean ? '🐐 ' : '') + (hasBrad ? '🦈 ' : '') + 'Can you beat my time?';
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(() => {
+      document.getElementById('copy-status').textContent = '✅ Copied to clipboard!';
+    }).catch(() => {
+      document.getElementById('copy-status').textContent = 'Select and copy the text manually.';
+    });
+  }
+}
+
+function closeWin() {
+  document.getElementById('win-screen').classList.remove('show');
+}
+
+function closeWinAndRestart() {
+  closeWin();
+  doRestart();
+}
+
+// ══════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════
+window.addEventListener('resize',resizeCanvas);
+resizeCanvas();recalc();renderTab();updateStatus();tick();
+
+setTimeout(()=>{
+  queueNotif('Welcome to TaxClicker Pro\u2122 98',
+    'G\'day, practice founder!<br><br>👆 <b>TOUCHSCREEN ONLY</b> — tap the buttons to play!<br><br>Tap <b>LODGE FINANCIALS & TAX RETURNS</b> to earn revenue.<br>Hire staff and acquire clients to grow your firm.<br><br>\u2694\uFE0F <b>Watch out!</b> PwC, KPMG, Deloitte and EY are your rivals.<br>Outpace them on the Industry Leaderboard!<br><br>\u26A0\uFE0F Economic events like the GFC and hyperinflation can strike at any time!<br><br>📈 Build a <b>Sales Team</b> to multiply ALL revenue!<br>🦈 Recruit <b>Jake Harper</b> as CRO for massive sales power.<br>🐐 Hire <b>Max Wellington</b> to dominate the market.<br><br>Remember: The ATO is always watching.');
+},500);
+</script>
+</body>
+</html>
