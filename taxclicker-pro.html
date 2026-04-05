@@ -1721,6 +1721,28 @@ function tapBuilding(idx) {
   checkWin();
 }
 
+function spawnHappinessParticle() {
+  if (currentTab !== 'town' || G.gameWon) return;
+  const builtCount = townSlots.filter(s => G.totalEarned >= s.at).length;
+  if (builtCount === 0) return;
+  // Pick a random built building cell
+  const idx = Math.floor(Math.random() * builtCount);
+  const cell = document.getElementById('town-cell-' + idx);
+  if (!cell) return;
+  const r = cell.getBoundingClientRect();
+  const hScore = getHappinessScore();
+  const em = hScore >= 70 ? (Math.random() < 0.5 ? '😊' : '⭐')
+           : hScore >= 45 ? (Math.random() < 0.5 ? '😐' : '💭')
+           : (Math.random() < 0.5 ? '😢' : '😠');
+  const p = document.createElement('div');
+  p.textContent = em;
+  p.style.cssText = `position:fixed;pointer-events:none;font-size:14px;z-index:997;
+    left:${r.left + r.width/2 - 7}px;top:${r.top}px;
+    animation:floatUp 1.4s ease-out forwards;`;
+  document.body.appendChild(p);
+  setTimeout(() => p.remove(), 1400);
+}
+
 // ══════════════════════════════════════════════
 //  OFFICE RENDERING
 // ══════════════════════════════════════════════
@@ -2003,6 +2025,11 @@ function tick(){
     const idleMs = now - (G._lastClickTime || now);
     if (idleMs >= 3000) idleBtn.classList.add('idle-bounce');
     else idleBtn.classList.remove('idle-bounce');
+  }
+  // Happiness particles from town buildings every ~2s
+  if (!G._lastHappParticle || now - G._lastHappParticle > 2000) {
+    G._lastHappParticle = now;
+    spawnHappinessParticle();
   }
   // Decay combo display when idle
   updateComboDisplay();
