@@ -297,6 +297,11 @@ html, body {
 }
 #big-click:active { border-style: inset; transform: translate(1px, 1px); }
 #big-click:hover { background: linear-gradient(180deg, #f0f0e0 0%, #d0d0c0 100%); }
+#next-tip {
+  padding: 4px 8px; background: #fffde7; border-top: 1px solid #ffe082;
+  font-size: 10px; font-family: 'IBM Plex Mono', monospace; color: #5d4037;
+  text-align: center; min-height: 22px; line-height: 1.4;
+}
 
 #statusbar {
   background: var(--toolbar-bg); border-top: 1px solid var(--win-dark); padding: 2px 8px;
@@ -477,6 +482,7 @@ html, body {
     </div>
     <div id="combo-display"></div>
     <div id="click-hint" style="text-align:center;font-family:'VT323',monospace;font-size:18px;color:#000080;padding:4px;animation:pulse 1s infinite;">👆 Click the button to earn money!</div>
+    <div id="next-tip">💡 Keep clicking to earn money!</div>
   </div>
   <div id="sheet-panel">
     <div id="tab-bar">
@@ -1699,6 +1705,29 @@ function updateStatus(){
       bigTimer.style.background=timeLeft<60?'#8b0000':timeLeft<300?'#5a4000':'#000080';
       if(bigTimerText) bigTimerText.textContent=timeStr;
     }
+  }
+  // Contextual next-step tip
+  const tipEl=document.getElementById('next-tip');
+  if(tipEl&&G.gameStarted&&!G.gameWon){
+    const {desks,staff,available}=getDeskCapacity();
+    const deskCost=getCost(upgrades.find(u=>u.id==='desk'));
+    const internCost=getCost(upgrades.find(u=>u.id==='intern'));
+    const hScore=getHappinessScore();
+    const builtCount=townSlots.filter(s=>G.totalEarned>=s.at).length;
+    const svcCount=Object.keys(G.cityServices).length;
+    const nextSvc=cityServiceDefs.find(s=>!G.cityServices[s.id]);
+    let tip='💡 Keep clicking to earn more money!';
+    if(G.money>=deskCost&&desks<=1)                        tip='💡 Buy a Desk in the Upgrades tab to unlock staff slots!';
+    else if(available>0&&G.money>=internCost&&staff===0)   tip='💡 Go to the Staff tab — you can hire your first worker!';
+    else if(available<=0&&G.money>=deskCost)               tip='💡 Buy more Desks (Upgrades tab) to hire more staff!';
+    else if(hScore<45)                                     tip='💡 Citizens are unhappy! Lower your Tax Rate in the Town tab.';
+    else if(builtCount<3)                                  tip='💡 Keep earning — new buildings will appear in your Town!';
+    else if(currentTab!=='town'&&builtCount>=3&&svcCount===0&&nextSvc&&G.money>=nextSvc.cost) tip='💡 Build City Services in the Town tab to boost income!';
+    else if(G.salesMultiplier===1&&G.money>=500)           tip='💡 Go to the Sales tab — a sales team multiplies ALL your money!';
+    else if(G.perSecond===0)                               tip='💡 Buy upgrades to earn money automatically — even when not clicking!';
+    else if(!G.gameWon&&(Date.now()-G.startTime)/1000>780)  tip='⚡ Less than 2 minutes left — click as fast as you can!';
+    else                                                   tip='💡 Check the Town tab and try adjusting your Tax Rate!';
+    tipEl.textContent=tip;
   }
 }
 const formulaQuips=[
