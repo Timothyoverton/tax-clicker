@@ -828,11 +828,17 @@ const _bgMelody = [
 function _bgTick() {
   if (_soundMuted) { _bgTimer = setTimeout(_bgTick, 200); return; }
   const ctx = getAudioCtx(); if (!ctx) { _bgTimer = setTimeout(_bgTick, 500); return; }
-  const [freq, dur] = _bgMelody[_bgIdx % _bgMelody.length]; _bgIdx++;
+  const [freq, baseDur] = _bgMelody[_bgIdx % _bgMelody.length]; _bgIdx++;
+  // Speed up music as time runs out: normal → 1.5x faster → 2x faster
+  const timeLeft = G.gameStarted ? Math.max(0, 900 - (Date.now() - G.startTime) / 1000) : 900;
+  const speed = timeLeft < 30 ? 2.0 : timeLeft < 60 ? 1.5 : 1.0;
+  const dur = baseDur / speed;
   const osc = ctx.createOscillator(), gain = ctx.createGain();
   osc.connect(gain); gain.connect(ctx.destination);
   osc.type = 'triangle'; osc.frequency.value = freq;
-  gain.gain.setValueAtTime(0.035, ctx.currentTime);
+  // Slightly louder in final stretch for extra urgency
+  const vol = timeLeft < 60 ? 0.05 : 0.035;
+  gain.gain.setValueAtTime(vol, ctx.currentTime);
   gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur * 0.85);
   osc.start(ctx.currentTime); osc.stop(ctx.currentTime + dur);
   _bgTimer = setTimeout(_bgTick, dur * 1000);
