@@ -421,7 +421,10 @@ html, body {
 .town-cell.tappable { cursor: pointer; }
 .town-cell.town-tap { animation: townTap 0.25s ease; }
 @keyframes townTap { 0%{transform:scale(1);} 40%{transform:scale(0.82) rotate(-5deg);} 80%{transform:scale(1.15) rotate(3deg);} 100%{transform:scale(1);} }
-.town-sky { position:relative;overflow:hidden;background:linear-gradient(180deg,#87ceeb 0%,#b8e4f8 100%);height:32px;border:2px inset var(--win-dark);border-bottom:none;max-width:420px;margin-bottom:0; }
+.town-sky { position:relative;overflow:hidden;height:32px;border:2px inset var(--win-dark);border-bottom:none;max-width:420px;margin-bottom:0;transition:background 1.5s; }
+.town-sky.sky-happy   { background:linear-gradient(180deg,#87ceeb 0%,#b8e4f8 100%); }
+.town-sky.sky-ok      { background:linear-gradient(180deg,#aab8c8 0%,#c8d8e8 100%); }
+.town-sky.sky-unhappy { background:linear-gradient(180deg,#7a8a96 0%,#a0aab0 100%); }
 .sky-sun { position:absolute;top:4px;font-size:20px;animation:sunMove 30s linear infinite; }
 @keyframes sunMove { 0%{left:-24px;} 100%{left:calc(100% + 24px);} }
 .sky-cloud { position:absolute;top:6px;font-size:16px;opacity:0.85; }
@@ -1486,11 +1489,11 @@ function renderTown() {
       <div style="padding:3px 7px;background:#cce5ff;border:1px solid #4488cc;">🏫 Schools: ${schools} <span style="color:#555;">(+${((schoolMult-1)*100).toFixed(0)}% income)</span></div>
       <div style="padding:3px 7px;background:#fff3cd;border:1px solid #ffc107;">🏪 Shops: ${shops} <span style="color:#555;">(+$${shopFlat.toFixed(1)}/sec)</span></div>
     </div>
-    <div class="town-sky">
-      <span class="sky-sun">☀️</span>
-      <span class="sky-cloud c1">☁️</span>
-      <span class="sky-cloud c2">⛅</span>
-      <span class="sky-cloud c3">☁️</span>
+    <div class="town-sky sky-happy" id="town-sky">
+      <span class="sky-sun" id="sky-sun">☀️</span>
+      <span class="sky-cloud c1" id="sky-cloud1">☁️</span>
+      <span class="sky-cloud c2" id="sky-cloud2">⛅</span>
+      <span class="sky-cloud c3" id="sky-cloud3">☁️</span>
     </div>
     <div class="town-grid">${cells}</div>
     ${progressBar}
@@ -1720,6 +1723,23 @@ function tapBuilding(idx) {
     showFloat(r.left + r.width/2, r.top, bonus);
   }
   checkWin();
+}
+
+function updateTownSky() {
+  const sky = document.getElementById('town-sky');
+  if (!sky) return;
+  const h = getHappinessScore();
+  const cls = h >= 70 ? 'sky-happy' : h >= 45 ? 'sky-ok' : 'sky-unhappy';
+  sky.className = 'town-sky ' + cls;
+  // Sun visible only when happy; rainy cloud when very unhappy
+  const sun = document.getElementById('sky-sun');
+  const c1  = document.getElementById('sky-cloud1');
+  const c2  = document.getElementById('sky-cloud2');
+  const c3  = document.getElementById('sky-cloud3');
+  if (sun) sun.textContent = h >= 70 ? '☀️' : h >= 45 ? '🌤️' : '🌧️';
+  if (c1)  c1.textContent  = h >= 45 ? '☁️' : '🌩️';
+  if (c2)  c2.textContent  = h >= 45 ? '⛅' : '☁️';
+  if (c3)  c3.textContent  = h >= 70 ? '☁️' : '🌧️';
 }
 
 function spawnHappinessParticle() {
@@ -2050,10 +2070,11 @@ function tick(){
     if (idleMs >= 3000) idleBtn.classList.add('idle-bounce');
     else idleBtn.classList.remove('idle-bounce');
   }
-  // Happiness particles from town buildings every ~2s
+  // Happiness particles from town buildings every ~2s + sky update
   if (!G._lastHappParticle || now - G._lastHappParticle > 2000) {
     G._lastHappParticle = now;
     spawnHappinessParticle();
+    updateTownSky();
   }
   // Decay combo display when idle
   updateComboDisplay();
