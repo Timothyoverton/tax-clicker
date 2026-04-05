@@ -1106,6 +1106,18 @@ function getTownHappiness() {
   if (tr <= 42) return { emoji: '😡', msg: 'Too high! Citizens are unhappy and leaving!', color: '#f8d7da', border: '#dc3545', mult: 0.4 };
   return { emoji: '🏃', msg: 'Taxes way too high! Everyone is leaving town!', color: '#f8d7da', border: '#dc3545', mult: 0.1 };
 }
+function getHappinessScore() {
+  const tr = G.taxRate;
+  if (tr <= 5)  return 12;
+  if (tr <= 10) return 42;
+  if (tr <= 16) return 95;
+  if (tr <= 22) return 85;
+  if (tr <= 28) return 65;
+  if (tr <= 32) return 50;
+  if (tr <= 38) return 32;
+  if (tr <= 42) return 22;
+  return 8;
+}
 function renderTown() {
   const earned = G.totalEarned;
   const builtCount = townSlots.filter(s => earned >= s.at).length;
@@ -1129,6 +1141,8 @@ function renderTown() {
     : '🎉 All buildings unlocked! You built a Metropolis!';
 
   const hap = getTownHappiness();
+  const hScore = getHappinessScore();
+  const barColor = hScore >= 70 ? '#28a745' : hScore >= 45 ? '#ffc107' : '#dc3545';
   const townIncomeSec = pop > 0 ? (pop * (G.taxRate / 100) * hap.mult * G.townEventMult * 0.5).toFixed(2) : '0.00';
   const eventBanner = G.townEventMult !== 1
     ? `<div style="padding:5px 8px;background:${G.townEventMult>1?'#d4edda':'#f8d7da'};border:1px solid ${G.townEventMult>1?'#28a745':'#dc3545'};margin:4px 0;font-size:11px;font-weight:700;">
@@ -1143,6 +1157,16 @@ function renderTown() {
       <div class="town-stat"><span class="town-stat-label">Town Tax/sec</span><span class="town-stat-val" style="color:var(--green-money);">$${townIncomeSec}</span></div>
     </div>
     <div style="margin:6px 0;padding:6px 8px;background:white;border:1px solid var(--cell-border);">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">
+        <span style="font-weight:700;font-size:12px;">😊 Happiness Meter</span>
+        <span style="font-weight:700;font-size:14px;color:${barColor};">${hap.emoji} ${hScore}%</span>
+      </div>
+      <div style="background:#e0e0e0;border:1px solid var(--cell-border);height:20px;position:relative;margin-bottom:4px;">
+        <div style="height:100%;width:${hScore}%;background:${barColor};transition:width 0.4s;"></div>
+        <div style="position:absolute;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:white;text-shadow:1px 1px 0 rgba(0,0,0,0.6);">
+          ${hScore >= 70 ? '🌟 Great!' : hScore >= 45 ? '👍 OK' : '⚠️ Unhappy!'}
+        </div>
+      </div>
       <div style="font-weight:700;margin-bottom:4px;font-size:12px;">🏛️ Tax Rate: <span style="color:var(--win-blue);font-size:15px;">${G.taxRate}%</span></div>
       <input type="range" min="0" max="50" value="${G.taxRate}" oninput="setTaxRate(this.value)"
         style="width:100%;cursor:pointer;margin:2px 0 1px 0;">
@@ -1284,8 +1308,10 @@ function drawMeetingRoom(x,y){ctx.fillStyle='#8b7355';ctx.fillRect(x,y+10,90,30)
 function updateStatus(){
   const rank=getRivalRank();
   const myPos=rank.findIndex(r=>r.name==='YOUR FIRM')+1;
+  const hScore=getHappinessScore();
+  const hEmoji=hScore>=80?'😊':hScore>=55?'😐':hScore>=35?'😟':'😡';
   document.getElementById('status-left').textContent=`Rank: #${myPos}/5`;
-  document.getElementById('status-center').textContent=`Clients: ${G.clientsServed}`;
+  document.getElementById('status-center').textContent=`${hEmoji} Town: ${hScore}% happy`;
   if (!G.gameWon) {
     const elapsed=(Date.now()-G.startTime)/1000;
     const timeLeft=Math.max(0,1800-elapsed);
