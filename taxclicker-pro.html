@@ -1965,6 +1965,18 @@ function updateStatus(){
     else                                                   tip='💡 Check the Town tab and try adjusting your Tax Rate!';
     tipEl.textContent=tip;
   }
+  // Click button label evolves with progress
+  const clickBtn = document.getElementById('big-click');
+  if (clickBtn && G.gameStarted && !G.gameWon) {
+    const e = G.totalEarned;
+    const label = e >= 1e7  ? '🚀 COMMAND THE FINANCIAL EMPIRE!'
+                : e >= 1e6  ? '🌏 MANAGE GLOBAL ASSETS & DEALS'
+                : e >= 1e5  ? '🏢 RUN CORPORATE FINANCE OPS'
+                : e >= 1e4  ? '📊 PROCESS BIG BUSINESS ACCOUNTS'
+                : e >= 1e3  ? '💼 SIGN BUSINESS DEALS & RETURNS'
+                :             '📄 LODGE FINANCIALS & TAX RETURNS';
+    if (clickBtn.textContent !== label) clickBtn.textContent = label;
+  }
   // Town mini-panel in left sidebar
   const miniPanel = document.getElementById('town-mini');
   if (miniPanel && G.gameStarted) {
