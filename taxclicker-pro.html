@@ -1135,6 +1135,27 @@ function checkMilestones() {
   }
 }
 
+const _passiveTiers = [
+  { val:1,    msg:'⚙️ You\'re earning <b>$1 per second</b> automatically!<br><br>Your team is working while you click — that\'s passive income!<br>Keep buying upgrades to earn even more!' },
+  { val:10,   msg:'⚙️ <b>$10 per second</b> — now we\'re talking!<br><br>Your firm runs itself even when you\'re not clicking.<br>Imagine making $10 every second in real life! 🤑' },
+  { val:50,   msg:'🚀 <b>$50 per second!</b><br><br>Your accounting empire is humming along!<br>That\'s $3,000 every minute just sitting there!' },
+  { val:250,  msg:'💥 <b>$250 per second!</b><br><br>You\'re a passive income machine!<br>Most businesses dream of earning this fast. 🌟' },
+  { val:1000, msg:'🏆 <b>$1,000 per second!</b><br><br>ONE THOUSAND DOLLARS EVERY SECOND!<br>You\'ve built an absolute financial powerhouse! 🚀🚀🚀' },
+];
+function checkPassiveMilestones() {
+  if (!G.gameStarted || G.gameWon) return;
+  if (!G._passiveTiersDone) G._passiveTiersDone = [];
+  const eff = G.taxRushActive ? G.taxRushMultiplier : 1;
+  const rps = G.perSecond * eff * G.salesMultiplier;
+  _passiveTiers.forEach(tier => {
+    if (rps >= tier.val && !G._passiveTiersDone.includes(tier.val)) {
+      G._passiveTiersDone.push(tier.val);
+      playSound('buy');
+      queueNotif('💰 PASSIVE INCOME MILESTONE: $' + tier.val + '/sec!', tier.msg);
+    }
+  });
+}
+
 const achievementDefs = [
   { id:'a_click1',   emoji:'🐣', label:'First click!',           check: () => G.totalClicks >= 1 },
   { id:'a_click100', emoji:'👆', label:'100 clicks!',            check: () => G.totalClicks >= 100 },
@@ -2263,7 +2284,7 @@ function tick(){
     G._lastSave = now;
     saveGame();
   }
-  renderOffice();updateStatus();checkMilestones();checkAchievements();
+  renderOffice();updateStatus();checkMilestones();checkAchievements();checkPassiveMilestones();
   requestAnimationFrame(tick);
 }
 
@@ -2321,7 +2342,7 @@ function doRestart() {
   G.townEventMult = 1; G.townEventTimer = 0; G.townNextEventIn = 90 + Math.random() * 60;
   G.townLevelIdx = 0; G.townBuiltCount = 0; G.townNewUnlockAt = 0; G.cityServices = {};
   G.startTime = Date.now(); G.gameWon = false; G.winByBillion = false; G.gameStarted = false;
-  G._badges = []; G._pbBeaten = false; G._newspapers = [];
+  G._badges = []; G._pbBeaten = false; G._newspapers = []; G._passiveTiersDone = [];
   const tray = document.getElementById('badge-tray'); if (tray) { tray.style.display='none'; tray.textContent=''; }
   G.peakRPS = 0; G.peakClickVal = 0;
   G.clickRevenue = 0; G.passiveRevenue = 0;
