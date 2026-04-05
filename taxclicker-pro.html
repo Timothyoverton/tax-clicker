@@ -2112,8 +2112,18 @@ function updateStatus(){
       sales:    upgrades.filter(u=>u.category==='sales'),
     };
     const {desks,available} = getDeskCapacity();
+    // Town tab gets a special "NEW" badge for 6s after a building unlocks
+    const townNewUnlock = G.townNewUnlockAt && (Date.now() - G.townNewUnlockAt < 6000);
     document.querySelectorAll('.tab').forEach(tab => {
       const t = tab.dataset.tab;
+      // Town tab: badge when new building just unlocked (and not already on town tab)
+      if (t === 'town') {
+        let badge = tab.querySelector('.tab-badge');
+        if (townNewUnlock && currentTab !== 'town') {
+          if (!badge) { badge=document.createElement('span'); badge.className='tab-badge'; badge.style.background='#e65100'; badge.textContent='★'; tab.appendChild(badge); }
+        } else { if (badge) badge.remove(); }
+        return;
+      }
       if (!tabBadgeMap[t]) { const b=tab.querySelector('.tab-badge'); if(b) b.remove(); return; }
       const canAfford = tabBadgeMap[t].some(u => G.money >= getCost(u));
       const staffBlocked = t==='staff' && available<=0;
