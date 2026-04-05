@@ -1109,6 +1109,22 @@ function checkMilestones() {
       G.townBuiltCount = builtCount;
       G.townNewUnlockAt = Date.now();
     }
+    // Town Newspaper — headlines at population milestones
+    const pop = townSlots.filter(s => G.totalEarned >= s.at).reduce((s,t) => s + t.pop, 0);
+    if (!G._newspapers) G._newspapers = [];
+    const papers = [
+      { minPop: 8,  id:'pop8',   headline: 'LOCAL MAYOR OPENS FIRST PARK!',      body: '📰 <i>The Daily Gazette</i> — Population: ' + pop + '<br><br>Residents of the new village are excited about their future. Mayor <b>' + (G.playerName||'Anonymous') + '</b> promises more parks and lower taxes.<br><br><i>"It\'s a great time to be alive!" — Local Resident</i>' },
+      { minPop: 20, id:'pop20',  headline: 'TOWN BOOMING — 20 CITIZENS!',         body: '📰 <i>The Daily Gazette</i> — Population: ' + pop + '<br><br>Businesses are opening and families are moving in! The tax office reports record collection this quarter.<br><br>💡 <b>Did you know?</b> Taxes pay for roads, schools and hospitals!' },
+      { minPop: 40, id:'pop40',  headline: 'CITY GROWS — NEW SCHOOL OPENS!',      body: '📰 <i>The Daily Gazette</i> — Population: ' + pop + '<br><br>Citizens celebrate as their hard-working mayor keeps building.<br><br>💡 <b>Fun fact:</b> In real life, your parents pay taxes too — and that\'s how schools get built!' },
+      { minPop: 64, id:'pop64',  headline: 'METROPOLIS DREAM WITHIN REACH!',      body: '📰 <i>The Daily Gazette</i> — Population: ' + pop + '<br><br>Analysts say Mayor <b>' + (G.playerName||'Anonymous') + '</b> is on track for a full Metropolis.<br><br>🌟 Keep the tax rate fair and citizens will keep coming!' },
+    ];
+    papers.forEach(p => {
+      if (pop >= p.minPop && !G._newspapers.includes(p.id)) {
+        G._newspapers.push(p.id);
+        queueNotif('📰 THE DAILY GAZETTE: ' + p.headline, p.body);
+        playSound('notif');
+      }
+    });
     // Personal best celebration
     if (!G._pbBeaten && G._personalBest > 0 && G.totalEarned > G._personalBest) {
       G._pbBeaten = true;
@@ -2295,7 +2311,7 @@ function doRestart() {
   G.townEventMult = 1; G.townEventTimer = 0; G.townNextEventIn = 90 + Math.random() * 60;
   G.townLevelIdx = 0; G.townBuiltCount = 0; G.townNewUnlockAt = 0; G.cityServices = {};
   G.startTime = Date.now(); G.gameWon = false; G.winByBillion = false; G.gameStarted = false;
-  G._badges = []; G._pbBeaten = false;
+  G._badges = []; G._pbBeaten = false; G._newspapers = [];
   const tray = document.getElementById('badge-tray'); if (tray) { tray.style.display='none'; tray.textContent=''; }
   G.peakRPS = 0; G.peakClickVal = 0;
   G.clickRevenue = 0; G.passiveRevenue = 0;
