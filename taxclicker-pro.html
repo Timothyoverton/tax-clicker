@@ -1055,6 +1055,13 @@ function checkMilestones() {
       G.townBuiltCount = builtCount;
       G.townNewUnlockAt = Date.now();
     }
+    // Personal best celebration
+    if (!G._pbBeaten && G._personalBest > 0 && G.totalEarned > G._personalBest) {
+      G._pbBeaten = true;
+      playSound('levelup');
+      launchConfetti();
+      queueNotif('🏆 NEW PERSONAL BEST!', '🎉🎉🎉<br><br>You just beat your own record!<br><br>Previous best: <b>$' + fmt(G._personalBest) + '</b><br>Current score: <b>$' + fmt(G.totalEarned) + '</b><br><br>🌟 Keep going — can you go even higher?!');
+    }
   }
 }
 
@@ -2488,6 +2495,11 @@ function startGame() {
   G.playerName = (inp ? inp.value.trim() : '') || 'Anonymous';
   G.gameStarted = true;
   G.startTime = Date.now();
+  // Store personal best for this player so we can celebrate beating it mid-game
+  const allScores = loadScores();
+  const myBest = allScores.filter(s => s.name === G.playerName).reduce((best, s) => Math.max(best, s.score), 0);
+  G._personalBest = myBest;
+  G._pbBeaten = false;
   document.getElementById('scoreboard-screen').style.display = 'none';
 }
 
