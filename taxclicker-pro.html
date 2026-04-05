@@ -236,6 +236,7 @@ html, body {
   border-bottom: none; cursor: pointer; font-size: 11px; margin-left: 2px; position: relative; bottom: -1px;
 }
 .tab.active { background: white; border-bottom: 1px solid white; font-weight: 700; }
+.tab .tab-badge { position:absolute;top:-5px;right:2px;background:#e53935;color:white;border-radius:50%;width:12px;height:12px;font-size:8px;font-weight:700;display:flex;align-items:center;justify-content:center;line-height:1;font-family:'IBM Plex Mono',monospace; }
 
 #sheet-content { flex: 1; background: white; overflow-y: auto; border: 1px inset var(--win-dark); }
 
@@ -1911,6 +1912,29 @@ function updateStatus(){
   } else {
     if(rushBanner) rushBanner.style.display='none';
     if(bigClickBtn) bigClickBtn.classList.remove('rush-active');
+  }
+  // Tab badges — show red dot when you can afford something
+  if(G.gameStarted && !G.gameWon) {
+    const tabBadgeMap = {
+      upgrades: upgrades.filter(u=>u.category==='office'),
+      staff:    upgrades.filter(u=>u.category==='staff'),
+      clients:  upgrades.filter(u=>u.category==='clients'),
+      sales:    upgrades.filter(u=>u.category==='sales'),
+    };
+    const {desks,available} = getDeskCapacity();
+    document.querySelectorAll('.tab').forEach(tab => {
+      const t = tab.dataset.tab;
+      if (!tabBadgeMap[t]) { const b=tab.querySelector('.tab-badge'); if(b) b.remove(); return; }
+      const canAfford = tabBadgeMap[t].some(u => G.money >= getCost(u));
+      const staffBlocked = t==='staff' && available<=0;
+      const showBadge = canAfford && !staffBlocked && tab.dataset.tab !== currentTab;
+      let badge = tab.querySelector('.tab-badge');
+      if (showBadge) {
+        if (!badge) { badge=document.createElement('span'); badge.className='tab-badge'; badge.textContent='!'; tab.appendChild(badge); }
+      } else {
+        if (badge) badge.remove();
+      }
+    });
   }
 }
 const formulaQuips=[
