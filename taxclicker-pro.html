@@ -478,6 +478,7 @@ html, body {
   <div class="menu-item" onclick="toggleMenu('view-menu')">View
     <div class="dropdown" id="view-menu">
       <div class="dd-item" onclick="event.stopPropagation();closeMenus();switchTab('dashboard');">📊 Dashboard</div>
+      <div class="dd-item" onclick="event.stopPropagation();closeMenus();switchTab('town');">🏙️ Town</div>
       <div class="dd-item" onclick="event.stopPropagation();closeMenus();switchTab('upgrades');">🛒 Upgrades</div>
       <div class="dd-item" onclick="event.stopPropagation();closeMenus();switchTab('staff');">👔 Staff</div>
       <div class="dd-item" onclick="event.stopPropagation();closeMenus();switchTab('clients');">📁 Clients</div>
@@ -541,12 +542,12 @@ html, body {
   <div id="sheet-panel">
     <div id="tab-bar">
       <div class="tab active" data-tab="dashboard" onclick="switchTab('dashboard')">📊 Dashboard</div>
+      <div class="tab" data-tab="town" onclick="switchTab('town')">🏙️ Town</div>
       <div class="tab" data-tab="upgrades" onclick="switchTab('upgrades')">🛒 Upgrades</div>
       <div class="tab" data-tab="staff" onclick="switchTab('staff')">👔 Staff</div>
       <div class="tab" data-tab="clients" onclick="switchTab('clients')">📁 Clients</div>
       <div class="tab" data-tab="sales" onclick="switchTab('sales')">📈 Sales</div>
       <div class="tab" data-tab="rivals" onclick="switchTab('rivals')">⚔️ Rivals</div>
-      <div class="tab" data-tab="town" onclick="switchTab('town')">🏙️ Town</div>
       <div class="tab" data-tab="budget" onclick="switchTab('budget')">💰 Budget</div>
     </div>
     <div id="sheet-content"></div>
