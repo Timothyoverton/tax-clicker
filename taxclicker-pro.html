@@ -467,6 +467,7 @@ html, body {
     <div id="click-zone">
       <button id="big-click">📄 LODGE FINANCIALS & TAX RETURNS</button>
     </div>
+    <div id="click-hint" style="text-align:center;font-family:'VT323',monospace;font-size:18px;color:#000080;padding:4px;animation:pulse 1s infinite;">👆 Click the button to earn money!</div>
   </div>
   <div id="sheet-panel">
     <div id="tab-bar">
@@ -1524,6 +1525,7 @@ document.getElementById('big-click').addEventListener('click', (e) => {
   G.clickRevenue += earned;
   if (earned > G.peakClickVal) G.peakClickVal = earned;
   playSound('click');
+  if (G.totalClicks === 1) { const h = document.getElementById('click-hint'); if (h) h.style.display = 'none'; }
   renderTab(); showFloat(e.clientX||e.pageX, e.clientY||e.pageY, earned); updateStatus();
   checkWin();
 });
@@ -2085,6 +2087,7 @@ function continueGame() {
   recalc();
   G.gameStarted = true;
   document.getElementById('scoreboard-screen').style.display = 'none';
+  const h = document.getElementById('click-hint'); if (h) h.style.display = 'none';
   renderTab(); updateStatus();
 }
 
@@ -2131,8 +2134,15 @@ showScoreboard();
 document.getElementById('player-name-input').addEventListener('keydown', e => { if (e.key==='Enter') startGame(); });
 
 setTimeout(()=>{
-  queueNotif('Welcome to TaxClicker Pro\u2122 98',
-    'G\'day, practice founder!<br><br>👆 <b>TOUCHSCREEN ONLY</b> — tap the buttons to play!<br><br>Tap <b>LODGE FINANCIALS & TAX RETURNS</b> to earn revenue.<br>Hire staff and acquire clients to grow your firm.<br><br>\u2694\uFE0F <b>Watch out!</b> PwC, KPMG, Deloitte and EY are your rivals.<br>Outpace them on the Industry Leaderboard!<br><br>\u26A0\uFE0F Economic events like the GFC and hyperinflation can strike at any time!<br><br>📈 Build a <b>Sales Team</b> to multiply ALL revenue!<br>🦈 Recruit <b>Jake Harper</b> as CRO for massive sales power.<br>🐐 Hire <b>Max Wellington</b> to dominate the market.<br><br>Remember: The ATO is always watching.');
+  queueNotif('👋 Welcome to TaxClicker Pro™ 98!',
+    '🏙️ <b>You are the Mayor AND the accountant!</b><br><br>' +
+    '1️⃣ <b>Click the big button</b> on the left to earn money!<br>' +
+    '2️⃣ <b>Buy Upgrades</b> to earn money automatically.<br>' +
+    '3️⃣ <b>Build your Town</b> — unlock buildings as you earn more!<br>' +
+    '4️⃣ <b>Set your Tax Rate</b> in the Town tab to keep citizens happy.<br><br>' +
+    '⏱️ You have <b>15 minutes</b> — earn as much as you can!<br>' +
+    '🏆 Goal: reach <b>$1 Billion</b> before time runs out!<br><br>' +
+    '<i>Good luck, Mayor! Your town is counting on you! 🌟</i>');
 },500);
 </script>
 </body>
