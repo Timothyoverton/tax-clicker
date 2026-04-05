@@ -300,6 +300,8 @@ html, body {
 #big-click.rush-active { background: linear-gradient(180deg,#fff176,#ffcc00) !important; color: #cc2200 !important; border-color: #ff6600 !important; animation: rushPulse 0.4s infinite alternate; }
 @keyframes rushPulse { from{box-shadow:0 0 6px 2px #ff8800;} to{box-shadow:0 0 18px 6px #ff4400;} }
 @keyframes rushBg { 0%{background-position:0% 0;} 100%{background-position:200% 0;} }
+#big-click.idle-bounce { animation: idleBounce 0.7s ease infinite; }
+@keyframes idleBounce { 0%,100%{transform:translateY(0) scale(1);} 30%{transform:translateY(-5px) scale(1.04);} 60%{transform:translateY(-2px) scale(1.02);} }
 #power-click-wrap {
   padding: 4px 8px; text-align: center; min-height: 38px; background: var(--cell-header);
   border-top: 1px solid var(--cell-border);
@@ -1609,7 +1611,10 @@ function updateComboDisplay() {
 // ══════════════════════════════════════════════
 document.getElementById('big-click').addEventListener('click', (e) => {
   if (G.gameWon) return;
+  G._lastClickTime = Date.now();
   G.clickTimes.push(Date.now());
+  const btn = document.getElementById('big-click');
+  if (btn) btn.classList.remove('idle-bounce');
   const combo = getCombo();
   const eff = G.taxRushActive ? G.taxRushMultiplier : 1;
   const earned = G.clickValue * eff * G.salesMultiplier * combo.mult;
@@ -1964,6 +1969,13 @@ function tick(){
   if (!G._lastRender || now - G._lastRender >= 500) {
     G._lastRender = now;
     renderTab();
+  }
+  // Idle bounce: nudge button after 3s of no clicking
+  const idleBtn = document.getElementById('big-click');
+  if (idleBtn && !G.gameWon && G.gameStarted && !G.taxRushActive) {
+    const idleMs = now - (G._lastClickTime || now);
+    if (idleMs >= 3000) idleBtn.classList.add('idle-bounce');
+    else idleBtn.classList.remove('idle-bounce');
   }
   // Decay combo display when idle
   updateComboDisplay();
