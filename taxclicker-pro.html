@@ -671,6 +671,7 @@ const G = {
   quarter: 1, year: 2026, quarterTime: 0,
   milestones: [], lastTick: Date.now(),
   eventTimer: 0, nextEventIn: 45 + Math.random() * 30,
+  townEventMult: 1, townEventTimer: 0, townNextEventIn: 90 + Math.random() * 60,
   notifQueue: [],
   // Win tracking
   startTime: Date.now(), gameWon: false, winByBillion: false,
@@ -1009,6 +1010,46 @@ function renderRivals() {
 }
 
 // ══════════════════════════════════════════════
+//  TOWN RANDOM EVENTS
+// ══════════════════════════════════════════════
+const townEvents = [
+  { icon: '🎪', name: 'Town Festival!',
+    popup: '🎪 TOWN FESTIVAL! 🎪<br><br>Everyone is out celebrating!<br><br>Town tax income <b>3x for 30 seconds!</b><br><br><i>"Best town ever!" — Local resident</i>',
+    mult: 3, duration: 30 },
+  { icon: '☀️', name: 'Sunny Long Weekend!',
+    popup: '☀️ PERFECT SUNNY WEEKEND! ☀️<br><br>Everyone is visiting the parks and shops!<br><br>Town income <b>2x for 25 seconds!</b>',
+    mult: 2, duration: 25 },
+  { icon: '🔬', name: 'School Science Fair!',
+    popup: '🔬 SCHOOL SCIENCE FAIR WIN! 🔬<br><br>Your town\'s school won first place!<br>Citizens are SO proud!<br><br>Town income <b>2x for 20 seconds!</b>',
+    mult: 2, duration: 20 },
+  { icon: '🌧️', name: 'Heavy Rain!',
+    popup: '🌧️ HEAVY RAIN ALERT 🌧️<br><br>Shops are quiet and people are staying home.<br><br>Town income <b>-60% for 20 seconds.</b><br><br><i>Maybe build a covered market next time!</i>',
+    mult: 0.4, duration: 20 },
+  { icon: '🚧', name: 'Road Repairs!',
+    popup: '🚧 ROAD REPAIRS ON MAIN STREET 🚧<br><br>Fixing the roads makes the town better!<br>But it\'s a bit disruptive right now...<br><br>Town income <b>-30% for 15 seconds.</b>',
+    mult: 0.7, duration: 15 },
+  { icon: '🏠', name: 'New Families Moving In!',
+    popup: '🏠 NEW FAMILIES MOVING IN! 🏠<br><br>Word is spreading — your town is awesome!<br>Three new families just arrived!<br><br>Town income <b>1.5x for 25 seconds!</b>',
+    mult: 1.5, duration: 25 },
+  { icon: '🎡', name: 'Fair Comes to Town!',
+    popup: '🎡 THE TRAVELLING FAIR IS HERE! 🎡<br><br>Rides, games, and fairy floss!<br>Everyone loves it!<br><br>Town income <b>2.5x for 20 seconds!</b>',
+    mult: 2.5, duration: 20 },
+  { icon: '⛈️', name: 'Thunderstorm!',
+    popup: '⛈️ THUNDERSTORM WARNING ⛈️<br><br>A big storm rolled through overnight.<br>Some minor damage, but everyone is safe.<br><br>Town income <b>-50% for 15 seconds.</b>',
+    mult: 0.5, duration: 15 },
+];
+function triggerTownEvent() {
+  const evt = townEvents[Math.floor(Math.random() * townEvents.length)];
+  G.townEventMult = evt.mult;
+  queueNotif(evt.icon + ' TOWN EVENT: ' + evt.name, evt.popup);
+  if (currentTab === 'town') renderTab();
+  setTimeout(() => {
+    G.townEventMult = 1;
+    if (currentTab === 'town') renderTab();
+  }, evt.duration * 1000);
+}
+
+// ══════════════════════════════════════════════
 //  TOWN GRID
 // ══════════════════════════════════════════════
 const townSlots = [
@@ -1088,7 +1129,11 @@ function renderTown() {
     : '🎉 All buildings unlocked! You built a Metropolis!';
 
   const hap = getTownHappiness();
-  const townIncomeSec = pop > 0 ? (pop * (G.taxRate / 100) * hap.mult * 0.5).toFixed(2) : '0.00';
+  const townIncomeSec = pop > 0 ? (pop * (G.taxRate / 100) * hap.mult * G.townEventMult * 0.5).toFixed(2) : '0.00';
+  const eventBanner = G.townEventMult !== 1
+    ? `<div style="padding:5px 8px;background:${G.townEventMult>1?'#d4edda':'#f8d7da'};border:1px solid ${G.townEventMult>1?'#28a745':'#dc3545'};margin:4px 0;font-size:11px;font-weight:700;">
+        ${G.townEventMult>1?'⚡':'⚠️'} TOWN EVENT ACTIVE! Income ${G.townEventMult}x right now!
+      </div>` : '';
 
   return `<div id="town-container">
     <div class="town-level-banner" style="background:${levelInfo.color};">${levelInfo.name}</div>
@@ -1108,6 +1153,7 @@ function renderTown() {
         ${hap.emoji} ${hap.msg}
       </div>
     </div>
+    ${eventBanner}
     <div class="town-grid">${cells}</div>
     <div class="town-next">${nextHint}</div>
   </div>`;  // all values from internal game state — no user input rendered here
@@ -1287,13 +1333,22 @@ function tick(){
       G.money+=earned;G.totalEarned+=earned;G.passiveRevenue+=earned;
       G.clientsServed+=Math.floor(dt*0.3*upgrades.filter(u=>u.category==='staff').reduce((s,u)=>s+u.owned,0));
     }
-    // Town tax income: population × tax rate × happiness multiplier
+    // Town tax income: population × tax rate × happiness multiplier × event multiplier
     const townPop=townSlots.filter(s=>G.totalEarned>=s.at).reduce((sum,s)=>sum+s.pop,0);
     if(townPop>0){
       const tr=G.taxRate;
       const happMult=tr<=5?0.2:tr<=10?0.6:tr<=22?1.0:tr<=32?0.75:tr<=42?0.4:0.1;
-      const townEarned=townPop*(tr/100)*happMult*0.5*eff*dt;
+      const townEarned=townPop*(tr/100)*happMult*G.townEventMult*0.5*eff*dt;
       G.money+=townEarned;G.totalEarned+=townEarned;G.passiveRevenue+=townEarned;
+    }
+    // Town random events (start firing once 2+ buildings exist)
+    const townBuilt=townSlots.filter(s=>G.totalEarned>=s.at).length;
+    if(townBuilt>=2){
+      G.townEventTimer+=dt;
+      if(G.townEventTimer>=G.townNextEventIn){
+        G.townEventTimer=0;G.townNextEventIn=90+Math.random()*60;
+        triggerTownEvent();
+      }
     }
 
     const hasSean=upgrades.find(u=>u.id==='sean')?.owned>0;
@@ -1374,6 +1429,7 @@ function doRestart() {
   G.milestones = []; G.eventTimer = 0; G.nextEventIn = 45 + Math.random() * 30;
   G.notifQueue = [];
   G.taxRate = 15;
+  G.townEventMult = 1; G.townEventTimer = 0; G.townNextEventIn = 90 + Math.random() * 60;
   G.startTime = Date.now(); G.gameWon = false; G.winByBillion = false; G.gameStarted = false;
   G.peakRPS = 0; G.peakClickVal = 0;
   G.clickRevenue = 0; G.passiveRevenue = 0;
