@@ -354,6 +354,8 @@ html, body {
 .town-cell.empty { background: #a8d878; }
 .town-cell.locked { background: #c4c4b4; font-size: 14px; color: #888; }
 .town-cell:not(.locked):hover { transform: scale(1.08); z-index: 5; }
+.town-cell.new-unlock { animation: popIn 0.6s cubic-bezier(0.175,0.885,0.32,1.275); box-shadow: 0 0 8px 3px #ffe066; }
+@keyframes popIn { 0%{transform:scale(0) rotate(-10deg);opacity:0;} 70%{transform:scale(1.25) rotate(3deg);} 100%{transform:scale(1) rotate(0deg);opacity:1;} }
 .town-cell .cell-label {
   font-size: 7px; color: rgba(0,0,0,0.55); line-height: 1; margin-top: 1px;
   font-family: 'IBM Plex Mono', monospace;
@@ -679,7 +681,7 @@ const G = {
   milestones: [], lastTick: Date.now(),
   eventTimer: 0, nextEventIn: 45 + Math.random() * 30,
   townEventMult: 1, townEventTimer: 0, townNextEventIn: 90 + Math.random() * 60,
-  townLevelIdx: 0,
+  townLevelIdx: 0, townBuiltCount: 0, townNewUnlockAt: 0,
   notifQueue: [],
   // Win tracking
   startTime: Date.now(), gameWon: false, winByBillion: false,
@@ -878,6 +880,11 @@ function checkMilestones() {
       G.townLevelIdx = newLevelIdx;
       const msg = townLevelUpMsgs[newLevelIdx];
       if (msg) queueNotif(msg.title, msg.msg);
+    }
+    // Detect new building unlock for pop-in animation
+    if (builtCount > G.townBuiltCount) {
+      G.townBuiltCount = builtCount;
+      G.townNewUnlockAt = Date.now();
     }
   }
 }
@@ -1174,15 +1181,31 @@ function renderTown() {
   const pop = townSlots.filter(s => earned >= s.at).reduce((sum, s) => sum + s.pop, 0);
   const nextSlot = townSlots.find(s => earned < s.at);
 
+  const isNewUnlock = Date.now() - G.townNewUnlockAt < 2000;
   let cells = '';
-  townSlots.forEach(s => {
+  townSlots.forEach((s, i) => {
     const built = earned >= s.at;
     if (built) {
-      cells += `<div class="town-cell" title="${s.name}">${s.emoji}<span class="cell-label">${s.name}</span></div>`;
+      const isNewest = isNewUnlock && i === builtCount - 1;
+      cells += `<div class="town-cell${isNewest?' new-unlock':''}" title="${s.name}">${s.emoji}<span class="cell-label">${s.name}</span></div>`;
     } else {
       cells += `<div class="town-cell locked" title="Unlocks at $${fmt(s.at)}">🌿</div>`;
     }
   });
+
+  // Progress bar toward next unlock
+  let progressBar = '';
+  if (nextSlot) {
+    const prevAt = builtCount > 0 ? townSlots[builtCount - 1].at : 0;
+    const pct = Math.min(100, Math.round(((earned - prevAt) / (nextSlot.at - prevAt)) * 100));
+    progressBar = `<div style="margin:4px 0 2px 0;font-size:10px;font-weight:700;">
+      ${nextSlot.emoji} Next: <b>${nextSlot.name}</b> — $${fmt(nextSlot.at)} total
+      <div style="background:#e0e0e0;border:1px solid var(--cell-border);height:14px;margin-top:2px;position:relative;">
+        <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#4a90d9,#00c853);transition:width 0.3s;"></div>
+        <div style="position:absolute;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#333;">${pct}% there!</div>
+      </div>
+    </div>`;
+  }
 
   const nextHint = nextSlot
     ? `⬆️ Next building: ${nextSlot.emoji} ${nextSlot.name} — earn $${fmt(nextSlot.at)} total (you have $${fmt(earned)})`
@@ -1233,6 +1256,7 @@ function renderTown() {
       <div style="padding:3px 7px;background:#fff3cd;border:1px solid #ffc107;">🏪 Shops: ${shops} <span style="color:#555;">(+$${shopFlat.toFixed(1)}/sec)</span></div>
     </div>
     <div class="town-grid">${cells}</div>
+    ${progressBar}
     <div class="town-next">${nextHint}</div>
   </div>`;  // all values from internal game state — no user input rendered here
 }
@@ -1590,7 +1614,7 @@ function doRestart() {
   G.notifQueue = [];
   G.taxRate = 15;
   G.townEventMult = 1; G.townEventTimer = 0; G.townNextEventIn = 90 + Math.random() * 60;
-  G.townLevelIdx = 0;
+  G.townLevelIdx = 0; G.townBuiltCount = 0; G.townNewUnlockAt = 0;
   G.startTime = Date.now(); G.gameWon = false; G.winByBillion = false; G.gameStarted = false;
   G.peakRPS = 0; G.peakClickVal = 0;
   G.clickRevenue = 0; G.passiveRevenue = 0;
