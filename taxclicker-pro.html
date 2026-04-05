@@ -336,6 +336,8 @@ html, body {
   text-shadow: 1px 1px 0 white;
 }
 @keyframes floatUp { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-50px); } }
+.burst-particle { position: fixed; pointer-events: none; font-size: 16px; z-index: 998; animation: burstFly var(--dur,0.7s) ease-out forwards; }
+@keyframes burstFly { 0%{opacity:1;transform:translate(0,0) scale(1);} 100%{opacity:0;transform:translate(var(--dx,0px),var(--dy,-60px)) scale(0.4);} }
 #combo-display {
   text-align: center; font-family: 'VT323', monospace; font-size: 22px; font-weight: 700;
   padding: 2px 4px; min-height: 28px; transition: all 0.15s;
@@ -1624,7 +1626,7 @@ document.getElementById('big-click').addEventListener('click', (e) => {
   playSound('click');
   updateComboDisplay();
   if (G.totalClicks === 1) { const h = document.getElementById('click-hint'); if (h) h.style.display = 'none'; }
-  renderTab(); showFloat(e.clientX||e.pageX, e.clientY||e.pageY, earned); updateStatus();
+  renderTab(); showFloat(e.clientX||e.pageX, e.clientY||e.pageY, earned); showClickBurst(e.clientX||e.pageX, e.clientY||e.pageY, combo.tier); updateStatus();
   checkWin();
 });
 document.addEventListener('keydown', (e) => {
@@ -1650,6 +1652,31 @@ function showFloat(x, y, amount) {
   el.style.left = x+'px'; el.style.top = y+'px';
   document.body.appendChild(el);
   setTimeout(() => el.remove(), 1000);
+}
+
+function showClickBurst(x, y, comboTier) {
+  const emojis = comboTier >= 3 ? ['💥','⭐','💰','✨','🌟','💫','💰','⭐']
+               : comboTier >= 2 ? ['⚡','💰','✨','💫','⭐','💰']
+               : comboTier >= 1 ? ['💰','✨','⭐','💰']
+               :                  ['💰','✨','💰'];
+  const count = emojis.length;
+  emojis.forEach((em, i) => {
+    const angle = (i / count) * Math.PI * 2 - Math.PI / 2;
+    const dist = 45 + Math.random() * 30;
+    const dx = Math.round(Math.cos(angle) * dist);
+    const dy = Math.round(Math.sin(angle) * dist);
+    const dur = (0.55 + Math.random() * 0.25).toFixed(2) + 's';
+    const p = document.createElement('div');
+    p.className = 'burst-particle';
+    p.textContent = em;
+    p.style.left = (x - 8) + 'px';
+    p.style.top = (y - 8) + 'px';
+    p.style.setProperty('--dx', dx + 'px');
+    p.style.setProperty('--dy', dy + 'px');
+    p.style.setProperty('--dur', dur);
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), 900);
+  });
 }
 
 function doPowerClick() {
