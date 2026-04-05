@@ -297,6 +297,22 @@ html, body {
 }
 #big-click:active { border-style: inset; transform: translate(1px, 1px); }
 #big-click:hover { background: linear-gradient(180deg, #f0f0e0 0%, #d0d0c0 100%); }
+#power-click-wrap {
+  padding: 4px 8px; text-align: center; min-height: 38px; background: var(--cell-header);
+  border-top: 1px solid var(--cell-border);
+}
+#power-click-btn {
+  display: none; cursor: pointer; font-family: 'VT323', monospace; font-size: 19px;
+  font-weight: 700; padding: 4px 18px; letter-spacing: 1px;
+  background: linear-gradient(180deg, #fff176, #ffd600);
+  border: 3px outset #b8860b; color: #5d3800;
+  animation: powerPulse 0.5s infinite alternate;
+}
+#power-click-btn:active { border-style: inset; }
+@keyframes powerPulse {
+  from { box-shadow: 0 0 6px 2px #ffd600; transform: scale(1); }
+  to   { box-shadow: 0 0 16px 6px #ff9800; transform: scale(1.04); }
+}
 #next-tip {
   padding: 4px 8px; background: #fffde7; border-top: 1px solid #ffe082;
   font-size: 10px; font-family: 'IBM Plex Mono', monospace; color: #5d4037;
@@ -481,6 +497,9 @@ html, body {
       <button id="big-click">📄 LODGE FINANCIALS & TAX RETURNS</button>
     </div>
     <div id="combo-display"></div>
+    <div id="power-click-wrap">
+      <button id="power-click-btn" onclick="doPowerClick()">⚡ POWER CLICK! <span id="power-timer"></span></button>
+    </div>
     <div id="click-hint" style="text-align:center;font-family:'VT323',monospace;font-size:18px;color:#000080;padding:4px;animation:pulse 1s infinite;">👆 Click the button to earn money!</div>
     <div id="next-tip">💡 Keep clicking to earn money!</div>
   </div>
@@ -741,6 +760,7 @@ const G = {
   peakRPS: 0, peakClickVal: 0,
   clickRevenue: 0, passiveRevenue: 0,
   clickTimes: [],
+  powerClickTimer: 0, powerClickNextIn: 30, powerClickActive: false, powerClickSecsLeft: 0,
 };
 
 // ══════════════════════════════════════════════
@@ -1596,6 +1616,23 @@ function showFloat(x, y, amount) {
   setTimeout(() => el.remove(), 1000);
 }
 
+function doPowerClick() {
+  if (!G.powerClickActive || G.gameWon) return;
+  G.powerClickActive = false;
+  const btn = document.getElementById('power-click-btn');
+  if (btn) btn.style.display = 'none';
+  const mult = 10;
+  const eff = G.taxRushActive ? G.taxRushMultiplier : 1;
+  const earned = G.clickValue * eff * G.salesMultiplier * mult;
+  G.money += earned; G.totalEarned += earned; G.totalClicks++; G.clickRevenue += earned;
+  if (earned > G.peakClickVal) G.peakClickVal = earned;
+  playSound('levelup');
+  const btnEl = document.getElementById('power-click-btn');
+  const rect = btnEl ? btnEl.getBoundingClientRect() : {left: window.innerWidth/2, top: window.innerHeight/2};
+  showFloat(rect.left + 60, rect.top, earned);
+  checkWin();
+}
+
 // ══════════════════════════════════════════════
 //  OFFICE RENDERING
 // ══════════════════════════════════════════════
@@ -1806,6 +1843,29 @@ function tick(){
     }
 
     checkWin();
+
+    // Power Click: appears every 30-45s, stays for 6s
+    if (!G.powerClickActive) {
+      G.powerClickTimer += dt;
+      if (G.powerClickTimer >= G.powerClickNextIn) {
+        G.powerClickTimer = 0;
+        G.powerClickNextIn = 30 + Math.random() * 15;
+        G.powerClickActive = true;
+        G.powerClickSecsLeft = 6;
+        const btn = document.getElementById('power-click-btn');
+        if (btn) btn.style.display = 'inline-block';
+        playSound('notif');
+      }
+    } else {
+      G.powerClickSecsLeft -= dt;
+      const timerEl = document.getElementById('power-timer');
+      if (timerEl) timerEl.textContent = '(' + Math.ceil(Math.max(0, G.powerClickSecsLeft)) + 's)';
+      if (G.powerClickSecsLeft <= 0) {
+        G.powerClickActive = false;
+        const btn = document.getElementById('power-click-btn');
+        if (btn) btn.style.display = 'none';
+      }
+    }
   }
 
   // Throttle renderTab to every 500ms so buy buttons work (rapid DOM replacement breaks clicks)
@@ -1880,6 +1940,8 @@ function doRestart() {
   G.peakRPS = 0; G.peakClickVal = 0;
   G.clickRevenue = 0; G.passiveRevenue = 0;
   G.clickTimes = [];
+  G.powerClickTimer = 0; G.powerClickNextIn = 30; G.powerClickActive = false; G.powerClickSecsLeft = 0;
+  const pcb = document.getElementById('power-click-btn'); if (pcb) pcb.style.display = 'none';
   upgrades.forEach(u => u.owned = 0);
   rivals.forEach(r => { r.revenue = 0; r.rate = r.baseRate; });
   document.getElementById('event-bar').style.display = 'none';
