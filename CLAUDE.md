@@ -60,6 +60,13 @@ The retro Windows 98 look is charming and unique. Keep the title bar, menu bar, 
 - requestAnimationFrame or setInterval for game loop (already exists)
 - Keep file under 5000 lines -- if it gets too big, simplify
 
+## Game Rules
+
+- **Win condition**: Reach $1 billion profit OR survive 30 minutes (whichever comes first)
+- **30-minute timer**: Visible countdown. Game ends at 30 min with a score summary.
+- **Scoreboard**: Show a scoreboard/leaderboard at the START of the game (before play begins). Store top scores in localStorage. Show player name, score, time, town size.
+- **Score = total profit at end** (whether by hitting $1B or time running out)
+
 ## What NOT to Change
 
 - Don't remove the Windows 98 aesthetic
