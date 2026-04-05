@@ -310,6 +310,14 @@ html, body {
   text-shadow: 1px 1px 0 white;
 }
 @keyframes floatUp { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-50px); } }
+#combo-display {
+  text-align: center; font-family: 'VT323', monospace; font-size: 22px; font-weight: 700;
+  padding: 2px 4px; min-height: 28px; transition: all 0.15s;
+  letter-spacing: 1px;
+}
+#combo-display.combo1 { color: #ff9800; }
+#combo-display.combo2 { color: #f44336; animation: pulse 0.4s infinite; }
+#combo-display.combo3 { color: #9c27b0; animation: pulse 0.25s infinite; font-size: 26px; }
 
 #notification {
   position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
@@ -467,6 +475,7 @@ html, body {
     <div id="click-zone">
       <button id="big-click">📄 LODGE FINANCIALS & TAX RETURNS</button>
     </div>
+    <div id="combo-display"></div>
     <div id="click-hint" style="text-align:center;font-family:'VT323',monospace;font-size:18px;color:#000080;padding:4px;animation:pulse 1s infinite;">👆 Click the button to earn money!</div>
   </div>
   <div id="sheet-panel">
@@ -725,6 +734,7 @@ const G = {
   gameStarted: false, playerName: 'Anonymous',
   peakRPS: 0, peakClickVal: 0,
   clickRevenue: 0, passiveRevenue: 0,
+  clickTimes: [],
 };
 
 // ══════════════════════════════════════════════
@@ -1515,16 +1525,42 @@ function renderBudget() {
 }
 
 // ══════════════════════════════════════════════
+//  CLICK COMBO / STREAK
+// ══════════════════════════════════════════════
+function getCombo() {
+  const now = Date.now();
+  G.clickTimes = G.clickTimes.filter(t => now - t < 2000);
+  const n = G.clickTimes.length;
+  if (n >= 15) return { mult: 3, tier: 3, label: '💥 MEGA STREAK! x3' };
+  if (n >= 8)  return { mult: 2, tier: 2, label: '⚡ HOT STREAK! x2' };
+  if (n >= 4)  return { mult: 1.5, tier: 1, label: '🔥 STREAK! x1.5' };
+  return { mult: 1, tier: 0, label: '' };
+}
+
+function updateComboDisplay() {
+  const el = document.getElementById('combo-display');
+  if (!el) return;
+  const now = Date.now();
+  G.clickTimes = G.clickTimes.filter(t => now - t < 2000);
+  const combo = getCombo();
+  el.textContent = combo.label;
+  el.className = 'combo' + combo.tier;
+}
+
+// ══════════════════════════════════════════════
 //  CLICKING
 // ══════════════════════════════════════════════
 document.getElementById('big-click').addEventListener('click', (e) => {
   if (G.gameWon) return;
+  G.clickTimes.push(Date.now());
+  const combo = getCombo();
   const eff = G.taxRushActive ? G.taxRushMultiplier : 1;
-  const earned = G.clickValue * eff * G.salesMultiplier;
+  const earned = G.clickValue * eff * G.salesMultiplier * combo.mult;
   G.money += earned; G.totalEarned += earned; G.totalClicks++; G.clientsServed++;
   G.clickRevenue += earned;
   if (earned > G.peakClickVal) G.peakClickVal = earned;
   playSound('click');
+  updateComboDisplay();
   if (G.totalClicks === 1) { const h = document.getElementById('click-hint'); if (h) h.style.display = 'none'; }
   renderTab(); showFloat(e.clientX||e.pageX, e.clientY||e.pageY, earned); updateStatus();
   checkWin();
@@ -1748,6 +1784,8 @@ function tick(){
     G._lastRender = now;
     renderTab();
   }
+  // Decay combo display when idle
+  updateComboDisplay();
   // Auto-save every 30 seconds
   if (!G._lastSave || now - G._lastSave >= 30000) {
     G._lastSave = now;
@@ -1812,6 +1850,7 @@ function doRestart() {
   G.startTime = Date.now(); G.gameWon = false; G.winByBillion = false; G.gameStarted = false;
   G.peakRPS = 0; G.peakClickVal = 0;
   G.clickRevenue = 0; G.passiveRevenue = 0;
+  G.clickTimes = [];
   upgrades.forEach(u => u.owned = 0);
   rivals.forEach(r => { r.revenue = 0; r.rate = r.baseRate; });
   document.getElementById('event-bar').style.display = 'none';
