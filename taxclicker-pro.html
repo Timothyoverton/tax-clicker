@@ -1644,6 +1644,7 @@ function doPowerClick() {
 // ══════════════════════════════════════════════
 //  OFFICE RENDERING
 // ══════════════════════════════════════════════
+const officeParticles = [];
 const canvas = document.getElementById('office-canvas');
 const ctx = canvas.getContext('2d');
 function resizeCanvas() {
@@ -1705,6 +1706,31 @@ function renderOffice() {
     ctx.beginPath();ctx.moveTo(wx+20,4);ctx.lineTo(wx+20,24);ctx.stroke();
     ctx.beginPath();ctx.moveTo(wx,14);ctx.lineTo(wx+40,14);ctx.stroke();
   }
+
+  // Spawn dollar particles from occupied desks
+  const now2 = Date.now();
+  const occupiedDesks = Math.min(totalDesks, 20);
+  if (G.perSecond > 0 && Math.random() < Math.min(0.4, G.perSecond / 50)) {
+    const di = Math.floor(Math.random() * occupiedDesks);
+    const row = Math.floor(di / maxDesksPerRow), col = di % maxDesksPerRow;
+    const px = 20 + col * 65 + 25, py = 50 + row * 72 - 20;
+    officeParticles.push({ x: px, y: py, vy: -(0.6 + Math.random() * 0.8), vx: (Math.random()-0.5)*0.5, life: 1.0, decay: 0.012 + Math.random()*0.008, size: 9 + Math.floor(Math.random()*5) });
+  }
+
+  // Draw & update dollar particles
+  for (let i = officeParticles.length - 1; i >= 0; i--) {
+    const p = officeParticles[i];
+    p.y += p.vy; p.x += p.vx; p.life -= p.decay;
+    if (p.life <= 0) { officeParticles.splice(i, 1); continue; }
+    ctx.save();
+    ctx.globalAlpha = p.life;
+    ctx.font = `bold ${p.size}px "IBM Plex Mono",monospace`;
+    ctx.fillStyle = '#22aa44';
+    ctx.fillText('$', p.x, p.y);
+    ctx.restore();
+  }
+  // Cap particle count
+  if (officeParticles.length > 80) officeParticles.splice(0, officeParticles.length - 80);
 }
 function drawDesk(x,y,occ){
   ctx.fillStyle='#a08060';ctx.fillRect(x,y,50,30);
