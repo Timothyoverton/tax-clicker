@@ -67,6 +67,12 @@ The retro Windows 98 look is charming and unique. Keep the title bar, menu bar, 
 - **Scoreboard**: Show a scoreboard/leaderboard at the START of the game (before play begins). Store top scores in localStorage. Show player name, score, time, town size.
 - **Score = total profit at end** (whether by hitting $1B or time running out)
 
+## BUGS TO FIX (URGENT — fix these FIRST before any new features)
+
+1. **Buy buttons don't work**: The "Buy[0]" buttons on the Upgrades/Staff/Clients tabs do nothing when clicked, even when the player has enough money (cost shows green). The purchase function is broken. Fix the onclick handler so buying actually works.
+
+2. **Countdown timer too small**: Make the 30-minute countdown clock LARGE and always visible in a corner of the screen (e.g. top-right). It should be easy to see at a glance — big font, bold, maybe with a background.
+
 ## What NOT to Change
 
 - Don't remove the Windows 98 aesthetic

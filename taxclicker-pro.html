@@ -1108,17 +1108,35 @@ function getTownHappiness() {
   if (tr <= 42) return { emoji: '😡', msg: 'Too high! Citizens are unhappy and leaving!', color: '#f8d7da', border: '#dc3545', mult: 0.4 };
   return { emoji: '🏃', msg: 'Taxes way too high! Everyone is leaving town!', color: '#f8d7da', border: '#dc3545', mult: 0.1 };
 }
+function getTownBonuses() {
+  const e = G.totalEarned;
+  const parks   = townSlots.filter(s => s.emoji === '🌳' && e >= s.at).length;
+  const schools = townSlots.filter(s => s.emoji === '🏫' && e >= s.at).length;
+  const shops   = townSlots.filter(s => (s.emoji === '🏪' || s.emoji === '🏬') && e >= s.at).length;
+  return {
+    parks, schools, shops,
+    happBonus:  Math.min(parks * 8, 30),   // each park +8 happiness (cap +30)
+    schoolMult: 1 + schools * 0.04,         // each school +4% town income
+    shopFlat:   shops * 0.6                 // each shop/mall +$0.60/sec flat
+  };
+}
 function getHappinessScore() {
   const tr = G.taxRate;
-  if (tr <= 5)  return 12;
-  if (tr <= 10) return 42;
-  if (tr <= 16) return 95;
-  if (tr <= 22) return 85;
-  if (tr <= 28) return 65;
-  if (tr <= 32) return 50;
-  if (tr <= 38) return 32;
-  if (tr <= 42) return 22;
-  return 8;
+  let base;
+  if      (tr <= 5)  base = 12;
+  else if (tr <= 10) base = 42;
+  else if (tr <= 16) base = 95;
+  else if (tr <= 22) base = 85;
+  else if (tr <= 28) base = 65;
+  else if (tr <= 32) base = 50;
+  else if (tr <= 38) base = 32;
+  else if (tr <= 42) base = 22;
+  else               base = 8;
+  return Math.min(100, base + getTownBonuses().happBonus);
+}
+function getHappinessMult() {
+  const s = getHappinessScore();
+  return s >= 80 ? 1.0 : s >= 60 ? 0.82 : s >= 40 ? 0.55 : s >= 20 ? 0.3 : 0.1;
 }
 function renderTown() {
   const earned = G.totalEarned;
@@ -1145,7 +1163,8 @@ function renderTown() {
   const hap = getTownHappiness();
   const hScore = getHappinessScore();
   const barColor = hScore >= 70 ? '#28a745' : hScore >= 45 ? '#ffc107' : '#dc3545';
-  const townIncomeSec = pop > 0 ? (pop * (G.taxRate / 100) * hap.mult * G.townEventMult * 0.5).toFixed(2) : '0.00';
+  const {parks, schools, shops, schoolMult, shopFlat} = getTownBonuses();
+  const townIncomeSec = ((pop * (G.taxRate / 100) * getHappinessMult() * schoolMult * 0.5 + shopFlat) * G.townEventMult).toFixed(2);
   const eventBanner = G.townEventMult !== 1
     ? `<div style="padding:5px 8px;background:${G.townEventMult>1?'#d4edda':'#f8d7da'};border:1px solid ${G.townEventMult>1?'#28a745':'#dc3545'};margin:4px 0;font-size:11px;font-weight:700;">
         ${G.townEventMult>1?'⚡':'⚠️'} TOWN EVENT ACTIVE! Income ${G.townEventMult}x right now!
@@ -1180,6 +1199,11 @@ function renderTown() {
       </div>
     </div>
     ${eventBanner}
+    <div style="display:flex;gap:6px;margin:4px 0;flex-wrap:wrap;font-size:10px;">
+      <div style="padding:3px 7px;background:#d4edda;border:1px solid #28a745;">🌳 Parks: ${parks} <span style="color:#555;">(+${parks*8}😊 happiness)</span></div>
+      <div style="padding:3px 7px;background:#cce5ff;border:1px solid #4488cc;">🏫 Schools: ${schools} <span style="color:#555;">(+${((schoolMult-1)*100).toFixed(0)}% income)</span></div>
+      <div style="padding:3px 7px;background:#fff3cd;border:1px solid #ffc107;">🏪 Shops: ${shops} <span style="color:#555;">(+$${shopFlat.toFixed(1)}/sec)</span></div>
+    </div>
     <div class="town-grid">${cells}</div>
     <div class="town-next">${nextHint}</div>
   </div>`;  // all values from internal game state — no user input rendered here
@@ -1194,9 +1218,8 @@ function renderBudget() {
   const firmIncome = G.perSecond * sm * eff;
 
   const townPop = townSlots.filter(s => G.totalEarned >= s.at).reduce((sum, s) => sum + s.pop, 0);
-  const tr = G.taxRate;
-  const happMult = tr<=5?0.2:tr<=10?0.6:tr<=22?1.0:tr<=32?0.75:tr<=42?0.4:0.1;
-  const townIncome = townPop * (tr / 100) * happMult * G.townEventMult * 0.5 * eff;
+  const {schoolMult, shopFlat, parks, schools, shops} = getTownBonuses();
+  const townIncome = (townPop * (G.taxRate / 100) * getHappinessMult() * schoolMult * 0.5 + shopFlat) * G.townEventMult * eff;
 
   const totalPassive = firmIncome + townIncome;
   const firmPct  = totalPassive > 0 ? Math.round(firmIncome / totalPassive * 100) : 0;
@@ -1432,14 +1455,11 @@ function tick(){
       G.money+=earned;G.totalEarned+=earned;G.passiveRevenue+=earned;
       G.clientsServed+=Math.floor(dt*0.3*upgrades.filter(u=>u.category==='staff').reduce((s,u)=>s+u.owned,0));
     }
-    // Town tax income: population × tax rate × happiness multiplier × event multiplier
+    // Town tax income: pop × taxRate × happiness × school boost + shop flat income
     const townPop=townSlots.filter(s=>G.totalEarned>=s.at).reduce((sum,s)=>sum+s.pop,0);
-    if(townPop>0){
-      const tr=G.taxRate;
-      const happMult=tr<=5?0.2:tr<=10?0.6:tr<=22?1.0:tr<=32?0.75:tr<=42?0.4:0.1;
-      const townEarned=townPop*(tr/100)*happMult*G.townEventMult*0.5*eff*dt;
-      G.money+=townEarned;G.totalEarned+=townEarned;G.passiveRevenue+=townEarned;
-    }
+    const {schoolMult,shopFlat}=getTownBonuses();
+    const townEarned=(townPop*(G.taxRate/100)*getHappinessMult()*schoolMult*0.5+shopFlat)*G.townEventMult*eff*dt;
+    if(townEarned>0){G.money+=townEarned;G.totalEarned+=townEarned;G.passiveRevenue+=townEarned;}
     // Town random events (start firing once 2+ buildings exist)
     const townBuilt=townSlots.filter(s=>G.totalEarned>=s.at).length;
     if(townBuilt>=2){
