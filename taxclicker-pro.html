@@ -443,6 +443,7 @@ html, body {
       <div class="dd-item" onclick="event.stopPropagation();closeMenus();showAbout();">ℹ️ About TaxClicker Pro™</div>
     </div>
   </div>
+  <div id="mute-btn" class="menu-item" onclick="toggleMute()" title="Toggle sound" style="margin-left:auto;font-size:14px;padding:2px 8px;">🔊</div>
 </div>
 <div id="toolbar">
   <span style="font-weight:600;">C1</span>
@@ -726,6 +727,53 @@ const G = {
 };
 
 // ══════════════════════════════════════════════
+//  SOUND ENGINE (Web Audio API — no external deps)
+// ══════════════════════════════════════════════
+let _audioCtx = null;
+let _soundMuted = false;
+
+function getAudioCtx() {
+  if (!_audioCtx) {
+    try { _audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
+  }
+  if (_audioCtx && _audioCtx.state === 'suspended') _audioCtx.resume();
+  return _audioCtx;
+}
+
+function toggleMute() {
+  _soundMuted = !_soundMuted;
+  const btn = document.getElementById('mute-btn');
+  if (btn) btn.textContent = _soundMuted ? '🔇' : '🔊';
+}
+
+function playSound(type) {
+  if (_soundMuted) return;
+  const ac = getAudioCtx();
+  if (!ac) return;
+  const t = ac.currentTime;
+  const g = ac.createGain();
+  g.connect(ac.destination);
+  const notes = {
+    click:   [[880, 0, 0.06], [1100, 0.04, 0.04]],
+    buy:     [[523, 0, 0.07], [659, 0.07, 0.07], [784, 0.14, 0.10]],
+    levelup: [[523, 0, 0.08], [659, 0.09, 0.08], [784, 0.18, 0.08], [1047, 0.27, 0.18]],
+    win:     [[523, 0, 0.09], [659, 0.1, 0.09], [784, 0.2, 0.09], [1047, 0.3, 0.09], [1319, 0.42, 0.28]],
+    notif:   [[660, 0, 0.06], [880, 0.07, 0.08]],
+  };
+  const seq = notes[type] || notes.click;
+  seq.forEach(([freq, delay, dur]) => {
+    const o = ac.createOscillator();
+    const og = ac.createGain();
+    o.type = type === 'click' ? 'triangle' : 'sine';
+    o.frequency.value = freq;
+    og.gain.setValueAtTime(0.08, t + delay);
+    og.gain.exponentialRampToValueAtTime(0.001, t + delay + dur);
+    o.connect(og); og.connect(g);
+    o.start(t + delay); o.stop(t + delay + dur + 0.01);
+  });
+}
+
+// ══════════════════════════════════════════════
 //  RIVALS
 // ══════════════════════════════════════════════
 const rivals = [
@@ -793,6 +841,7 @@ function buyUpgrade(id) {
   if (G.money >= cost) {
     G.money -= cost;
     u.owned++;
+    playSound('buy');
     recalc(); G._lastRender = Date.now(); renderTab(); renderOffice(); checkMilestones();
     if (u.isSean && u.owned === 1) {
       queueNotif('🐐 MAX WELLINGTON HAS ENTERED THE BUILDING',
@@ -927,7 +976,7 @@ function checkMilestones() {
     if (newLevelIdx > G.townLevelIdx) {
       G.townLevelIdx = newLevelIdx;
       const msg = townLevelUpMsgs[newLevelIdx];
-      if (msg) queueNotif(msg.title, msg.msg);
+      if (msg) { queueNotif(msg.title, msg.msg); playSound('levelup'); }
     }
     // Detect new building unlock for pop-in animation
     if (builtCount > G.townBuiltCount) {
@@ -1234,6 +1283,7 @@ function buyCityService(id) {
   if (!svc || G.cityServices[id] || G.money < svc.cost) return;
   G.money -= svc.cost;
   G.cityServices[id] = true;
+  playSound('buy');
   G._lastRender = Date.now(); renderTab();
   queueNotif(`${svc.emoji} ${svc.name} Built!`,
     `${svc.desc}<br><br>Town income <b>+${Math.round(svc.incomeMult*100)}%</b> and happiness <b>+${svc.happBonus}</b>!<br><br><i>Your citizens are cheering! 🎉</i>`);
@@ -1473,6 +1523,7 @@ document.getElementById('big-click').addEventListener('click', (e) => {
   G.money += earned; G.totalEarned += earned; G.totalClicks++; G.clientsServed++;
   G.clickRevenue += earned;
   if (earned > G.peakClickVal) G.peakClickVal = earned;
+  playSound('click');
   renderTab(); showFloat(e.clientX||e.pageX, e.clientY||e.pageY, earned); updateStatus();
   checkWin();
 });
@@ -1828,6 +1879,7 @@ function launchConfetti() {
 function showWinScreen() {
   const elapsed = Date.now() - G.startTime;
   launchConfetti();
+  playSound('win');
   saveScore(G.playerName, G.totalEarned, elapsed);
   const clickPct = G.totalEarned > 0 ? (G.clickRevenue / G.totalEarned * 100) : 0;
   const passivePct = 100 - clickPct;
