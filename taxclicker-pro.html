@@ -538,6 +538,7 @@ html, body {
         <span id="town-mini-pop">👥 0 people</span>
       </div>
     </div>
+    <div id="badge-tray" style="display:none;padding:4px 8px;background:#fffde7;border-top:1px solid #ffe082;font-size:18px;min-height:28px;line-height:1.4;letter-spacing:2px;" title="Your achievements!"></div>
   </div>
   <div id="sheet-panel">
     <div id="tab-bar">
@@ -1086,6 +1087,45 @@ function checkMilestones() {
       playSound('levelup');
       launchConfetti();
       queueNotif('🏆 NEW PERSONAL BEST!', '🎉🎉🎉<br><br>You just beat your own record!<br><br>Previous best: <b>$' + fmt(G._personalBest) + '</b><br>Current score: <b>$' + fmt(G.totalEarned) + '</b><br><br>🌟 Keep going — can you go even higher?!');
+    }
+  }
+}
+
+const achievementDefs = [
+  { id:'a_click1',   emoji:'🐣', label:'First click!',           check: () => G.totalClicks >= 1 },
+  { id:'a_click100', emoji:'👆', label:'100 clicks!',            check: () => G.totalClicks >= 100 },
+  { id:'a_earn100',  emoji:'💰', label:'Earned $100',            check: () => G.totalEarned >= 100 },
+  { id:'a_earn1k',   emoji:'💵', label:'Earned $1,000',          check: () => G.totalEarned >= 1000 },
+  { id:'a_earn1m',   emoji:'🤑', label:'Earned $1 Million!',     check: () => G.totalEarned >= 1e6 },
+  { id:'a_building', emoji:'🏠', label:'First town building!',   check: () => townSlots.filter(s => G.totalEarned >= s.at).length >= 2 },
+  { id:'a_town5',    emoji:'🏘️', label:'5 buildings!',           check: () => townSlots.filter(s => G.totalEarned >= s.at).length >= 5 },
+  { id:'a_town10',   emoji:'🏙️', label:'10 buildings!',          check: () => townSlots.filter(s => G.totalEarned >= s.at).length >= 10 },
+  { id:'a_combo',    emoji:'🔥', label:'First streak combo!',    check: () => getCombo().tier >= 1 },
+  { id:'a_megacombo',emoji:'💥', label:'MEGA streak!',           check: () => getCombo().tier >= 3 },
+  { id:'a_staff1',   emoji:'👔', label:'Hired first staff!',     check: () => upgrades.filter(u=>u.category==='staff').some(u=>u.owned>0) },
+  { id:'a_passive',  emoji:'⚙️', label:'Earning passively!',     check: () => G.perSecond >= 1 },
+  { id:'a_happy',    emoji:'😊', label:'Happy town! 70%+',       check: () => getHappinessScore() >= 70 },
+  { id:'a_pb',       emoji:'🏆', label:'New personal best!',     check: () => !!G._pbBeaten },
+];
+
+function checkAchievements() {
+  if (!G.gameStarted || G.gameWon) return;
+  if (!G._badges) G._badges = [];
+  let changed = false;
+  achievementDefs.forEach(def => {
+    if (!G._badges.includes(def.id) && def.check()) {
+      G._badges.push(def.id);
+      changed = true;
+      // Small pop notification for first few badges only
+      if (G._badges.length <= 5) queueNotif('🏅 Badge Unlocked: ' + def.label, def.emoji + ' ' + def.emoji + ' ' + def.emoji + '<br><br>You earned the <b>' + def.label + '</b> badge!<br>Check your badge tray! 👇');
+    }
+  });
+  if (changed) {
+    const tray = document.getElementById('badge-tray');
+    if (tray) {
+      tray.style.display = 'block';
+      tray.textContent = G._badges.map(id => achievementDefs.find(d=>d.id===id)?.emoji || '').join(' ');
+      tray.title = 'Badges: ' + G._badges.map(id => achievementDefs.find(d=>d.id===id)?.label || '').join(', ');
     }
   }
 }
@@ -2156,7 +2196,7 @@ function tick(){
     G._lastSave = now;
     saveGame();
   }
-  renderOffice();updateStatus();checkMilestones();
+  renderOffice();updateStatus();checkMilestones();checkAchievements();
   requestAnimationFrame(tick);
 }
 
@@ -2214,6 +2254,8 @@ function doRestart() {
   G.townEventMult = 1; G.townEventTimer = 0; G.townNextEventIn = 90 + Math.random() * 60;
   G.townLevelIdx = 0; G.townBuiltCount = 0; G.townNewUnlockAt = 0; G.cityServices = {};
   G.startTime = Date.now(); G.gameWon = false; G.winByBillion = false; G.gameStarted = false;
+  G._badges = []; G._pbBeaten = false;
+  const tray = document.getElementById('badge-tray'); if (tray) { tray.style.display='none'; tray.textContent=''; }
   G.peakRPS = 0; G.peakClickVal = 0;
   G.clickRevenue = 0; G.passiveRevenue = 0;
   G.clickTimes = [];
