@@ -813,6 +813,30 @@ function getAudioCtx() {
   return _audioCtx;
 }
 
+// ── Background music ──────────────────────────
+let _bgTimer = null, _bgIdx = 0;
+// Cheerful 8-bit melody in C major (freq Hz, duration s)
+const _bgMelody = [
+  [329,0.18],[392,0.18],[440,0.18],[392,0.18],
+  [329,0.18],[261,0.18],[293,0.18],[329,0.36],
+  [261,0.18],[329,0.18],[392,0.18],[440,0.18],
+  [523,0.36],[440,0.18],[392,0.18],[329,0.36],
+];
+function _bgTick() {
+  if (_soundMuted) { _bgTimer = setTimeout(_bgTick, 200); return; }
+  const ctx = getAudioCtx(); if (!ctx) { _bgTimer = setTimeout(_bgTick, 500); return; }
+  const [freq, dur] = _bgMelody[_bgIdx % _bgMelody.length]; _bgIdx++;
+  const osc = ctx.createOscillator(), gain = ctx.createGain();
+  osc.connect(gain); gain.connect(ctx.destination);
+  osc.type = 'triangle'; osc.frequency.value = freq;
+  gain.gain.setValueAtTime(0.035, ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur * 0.85);
+  osc.start(ctx.currentTime); osc.stop(ctx.currentTime + dur);
+  _bgTimer = setTimeout(_bgTick, dur * 1000);
+}
+function startBgMusic() { if (!_bgTimer) _bgTick(); }
+function stopBgMusic()  { if (_bgTimer) { clearTimeout(_bgTimer); _bgTimer = null; _bgIdx = 0; } }
+
 function toggleMute() {
   _soundMuted = !_soundMuted;
   const btn = document.getElementById('mute-btn');
@@ -2164,6 +2188,7 @@ function closeRestart() {
   document.getElementById('restart-confirm').style.display = 'none';
 }
 function doRestart() {
+  stopBgMusic();
   closeRestart();
   clearSave();
   G.money = 0; G.totalEarned = 0; G.totalClicks = 0; G.clientsServed = 0;
@@ -2250,6 +2275,7 @@ function launchConfetti() {
 
 function showWinScreen() {
   const elapsed = Date.now() - G.startTime;
+  stopBgMusic();
   launchConfetti();
   playSound('win');
   saveScore(G.playerName, G.totalEarned, elapsed);
@@ -2469,6 +2495,7 @@ function continueGame() {
   document.getElementById('scoreboard-screen').style.display = 'none';
   const h = document.getElementById('click-hint'); if (h) h.style.display = 'none';
   renderTab(); updateStatus();
+  startBgMusic();
 }
 
 function showScoreboard(msg) {
@@ -2506,6 +2533,7 @@ function startGame() {
   G._personalBest = myBest;
   G._pbBeaten = false;
   document.getElementById('scoreboard-screen').style.display = 'none';
+  startBgMusic();
 }
 
 // ══════════════════════════════════════════════
