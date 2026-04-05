@@ -664,7 +664,7 @@ html, body {
         <div style="margin-top:10px;">
           <button onclick="startGame()" style="background:linear-gradient(180deg,#ffe4b5,#daa520);border:2px outset var(--win-light);padding:6px 32px;cursor:pointer;font-family:'VT323',monospace;font-size:20px;font-weight:700;letter-spacing:1px;">▶ PLAY</button>
         </div>
-        <div style="margin-top:6px;font-size:10px;color:#666;">Goal: Earn as much profit as possible in 30 minutes!</div>
+        <div style="margin-top:6px;font-size:10px;color:#666;">Goal: Earn as much profit as possible in 15 minutes!</div>
       </div>
     </div>
   </div>
@@ -992,8 +992,8 @@ function renderDashboard() {
   let townLevelInfo = townLevels[0];
   townLevels.forEach(l => { if (builtCount >= l.minBuilt) townLevelInfo = l; });
   const elapsed = (Date.now() - G.startTime) / 1000;
-  const timeLeft = Math.max(0, 1800 - elapsed);
-  const timePct = Math.round((timeLeft / 1800) * 100);
+  const timeLeft = Math.max(0, 900 - elapsed);
+  const timePct = Math.round((timeLeft / 900) * 100);
 
   const goalPanel = `<div style="padding:8px 10px;background:white;border-bottom:2px solid var(--cell-border);">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
@@ -1160,7 +1160,7 @@ const townSlots = [
   { emoji: '🏠', name: 'House',    at: 2500,        pop: 4 },
   { emoji: '🏫', name: 'School',   at: 6000,        pop: 0 },
   { emoji: '🌳', name: 'Park',     at: 10000,       pop: 0 },
-  { emoji: '🏠', name: 'House',    at: 18000,       pop: 4 },
+  { emoji: '🏠', name: 'House',    at: 18000,      pop: 4 },
   { emoji: '🏪', name: 'Shop',     at: 30000,       pop: 0 },
   { emoji: '🏠', name: 'House',    at: 50000,       pop: 4 },
   { emoji: '🏥', name: 'Hospital', at: 80000,       pop: 0 },
@@ -1578,7 +1578,7 @@ function updateStatus(){
   document.getElementById('status-center').textContent=`${hEmoji} Town: ${hScore}% happy`;
   if (!G.gameWon) {
     const elapsed=(Date.now()-G.startTime)/1000;
-    const timeLeft=Math.max(0,1800-elapsed);
+    const timeLeft=Math.max(0,900-elapsed);
     const mins=Math.floor(timeLeft/60);
     const secs=Math.floor(timeLeft%60);
     const urgent=timeLeft<60?'⚠️':'⏱️';
@@ -1760,7 +1760,7 @@ function checkWin() {
     G.gameWon = true;
     G.winByBillion = true;
     showWinScreen();
-  } else if ((Date.now() - G.startTime) / 1000 >= 1800) {
+  } else if ((Date.now() - G.startTime) / 1000 >= 900) {
     G.gameWon = true;
     G.winByBillion = false;
     showWinScreen();
