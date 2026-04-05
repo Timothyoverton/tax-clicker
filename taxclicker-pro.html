@@ -1385,11 +1385,19 @@ function renderTown() {
   let cells = '';
   townSlots.forEach((s, i) => {
     const built = earned >= s.at;
+    const distanceFromFront = i - builtCount; // 0 = next to unlock, 1 = one after, etc.
     if (built) {
       const isNewest = isNewUnlock && i === builtCount - 1;
-      cells += `<div class="town-cell${isNewest?' new-unlock':''}" title="${s.name}">${s.emoji}<span class="cell-label">${s.name}</span></div>`;
+      cells += `<div class="town-cell${isNewest?' new-unlock':''}" title="${s.name}: ${s.pop>0?'+'+s.pop+' pop':'generates income'}">${s.emoji}<span class="cell-label">${s.name}</span></div>`;
+    } else if (distanceFromFront < 3) {
+      // Show next 3 as faded previews with cost
+      const pct = distanceFromFront === 0 ? 70 : distanceFromFront === 1 ? 40 : 20;
+      cells += `<div class="town-cell locked" title="Earn $${fmt(s.at)} total to unlock!" style="opacity:${pct/100};position:relative;">
+        <span style="font-size:18px;filter:grayscale(${100-pct}%);">${s.emoji}</span>
+        <span class="cell-label" style="font-size:6px;">🔒$${fmt(s.at)}</span>
+      </div>`;
     } else {
-      cells += `<div class="town-cell locked" title="Unlocks at $${fmt(s.at)}">🌿</div>`;
+      cells += `<div class="town-cell locked" title="Locked — keep earning!" style="opacity:0.15;">❓</div>`;
     }
   });
 
