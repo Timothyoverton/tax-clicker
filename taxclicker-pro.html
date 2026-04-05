@@ -2305,7 +2305,13 @@ function showWinScreen() {
       const svcCount = Object.keys(G.cityServices).length;
       const hScore = getHappinessScore();
       const hEmoji = hScore >= 80 ? '😊' : hScore >= 55 ? '😐' : hScore >= 35 ? '😟' : '😡';
+      const builtEmoji = townSlots.filter(s => G.totalEarned >= s.at).map(s => s.emoji).join(' ');
+      const lockedCount = 30 - builtCount;
+      const lockedStr = lockedCount > 0 ? ' <span style="opacity:0.3">' + '🔒 '.repeat(Math.min(lockedCount, 6)).trim() + (lockedCount > 6 ? ' +' + (lockedCount-6) + ' more' : '') + '</span>' : '';
       return '<h2>🏙️ YOUR TOWN</h2>' +
+        '<div style="background:#e8f4e8;border:2px inset var(--win-dark);padding:8px;margin:6px 0;font-size:20px;line-height:1.6;text-align:center;word-break:break-all;">' +
+          (builtEmoji || '🌾 Nothing built yet') + lockedStr +
+        '</div>' +
         '<table>' +
           '<tr><th>Stat</th><th style="text-align:right">Result</th></tr>' +
           '<tr><td>🏙️ Town Level</td><td class="stat-val">' + lvlInfo.name + '</td></tr>' +
