@@ -325,6 +325,43 @@ html, body {
 #sheet-content::-webkit-scrollbar { width: 16px; }
 #sheet-content::-webkit-scrollbar-track { background: var(--cell-header); border-left: 1px solid var(--cell-border); }
 #sheet-content::-webkit-scrollbar-thumb { background: var(--win-bg); border: 2px outset var(--win-light); }
+
+/* Town Grid */
+#town-container { padding: 8px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; }
+.town-level-banner {
+  margin-bottom: 6px; padding: 4px 10px; text-align: center;
+  background: var(--win-blue); color: white;
+  font-family: 'VT323', monospace; font-size: 18px; letter-spacing: 1px;
+}
+.town-stats {
+  display: flex; gap: 16px; margin-bottom: 6px; flex-wrap: wrap;
+  background: var(--cell-header); border: 1px solid var(--cell-border); padding: 4px 10px;
+}
+.town-stat { display: flex; flex-direction: column; align-items: center; }
+.town-stat-label { font-size: 9px; color: #666; text-transform: uppercase; }
+.town-stat-val { font-weight: 700; color: var(--win-blue); font-size: 14px; }
+.town-grid {
+  display: grid; grid-template-columns: repeat(6, 1fr);
+  gap: 3px; background: #6a9a4a; padding: 4px;
+  border: 2px inset var(--win-dark); max-width: 420px;
+}
+.town-cell {
+  aspect-ratio: 1; background: #90c060; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; font-size: 22px;
+  border: 1px solid rgba(0,80,0,0.2); position: relative; cursor: default;
+  transition: transform 0.1s; min-height: 44px;
+}
+.town-cell.empty { background: #a8d878; }
+.town-cell.locked { background: #c4c4b4; font-size: 14px; color: #888; }
+.town-cell:not(.locked):hover { transform: scale(1.08); z-index: 5; }
+.town-cell .cell-label {
+  font-size: 7px; color: rgba(0,0,0,0.55); line-height: 1; margin-top: 1px;
+  font-family: 'IBM Plex Mono', monospace;
+}
+.town-next {
+  margin-top: 6px; padding: 5px 8px; font-size: 10px; color: #444;
+  background: var(--highlight); border: 1px solid var(--cell-border);
+}
 </style>
 </head>
 <body>
@@ -407,6 +444,7 @@ html, body {
       <div class="tab" data-tab="clients" onclick="switchTab('clients')">📁 Clients</div>
       <div class="tab" data-tab="sales" onclick="switchTab('sales')">📈 Sales</div>
       <div class="tab" data-tab="rivals" onclick="switchTab('rivals')">⚔️ Rivals</div>
+      <div class="tab" data-tab="town" onclick="switchTab('town')">🏙️ Town</div>
     </div>
     <div id="sheet-content"></div>
   </div>
@@ -856,7 +894,8 @@ function renderTab() {
     case 'staff': el.innerHTML = renderUpgrades('staff'); break;
     case 'clients': el.innerHTML = renderUpgrades('clients'); break;
     case 'sales': el.innerHTML = renderUpgrades('sales'); break;
-    case 'rivals': el.innerHTML = renderRivals(); break;
+    case 'rivals': el.innerHTML = renderRivals(); break;  // renderRivals returns only static game data (no user input)
+    case 'town': el.innerHTML = renderTown(); break;  // renderTown returns only static game data (no user input)
   }
 }
 
@@ -966,6 +1005,87 @@ function renderRivals() {
     <tr><td class="row-header">${7+ranked.length}</td><td></td><td colspan="3" style="color:#555;">PwC is aggressive. Keep an eye on Deloitte — they\'re the fastest grower.</td></tr>
     ${hasSean ? `<tr><td class="row-header">${8+ranked.length}</td><td></td><td colspan="3" class="cell-sean">🐐 Max Wellington on your team — rival growth reduced by 50%!</td></tr>` : ''}
   </table>`;
+}
+
+// ══════════════════════════════════════════════
+//  TOWN GRID
+// ══════════════════════════════════════════════
+const townSlots = [
+  { emoji: '🏠', name: 'House',    at: 0,          pop: 4 },
+  { emoji: '🌳', name: 'Park',     at: 100,         pop: 0 },
+  { emoji: '🏠', name: 'House',    at: 400,         pop: 4 },
+  { emoji: '🏪', name: 'Shop',     at: 1000,        pop: 0 },
+  { emoji: '🏠', name: 'House',    at: 2500,        pop: 4 },
+  { emoji: '🏫', name: 'School',   at: 6000,        pop: 0 },
+  { emoji: '🌳', name: 'Park',     at: 10000,       pop: 0 },
+  { emoji: '🏠', name: 'House',    at: 18000,       pop: 4 },
+  { emoji: '🏪', name: 'Shop',     at: 30000,       pop: 0 },
+  { emoji: '🏠', name: 'House',    at: 50000,       pop: 4 },
+  { emoji: '🏥', name: 'Hospital', at: 80000,       pop: 0 },
+  { emoji: '🏦', name: 'Bank',     at: 130000,      pop: 0 },
+  { emoji: '🏠', name: 'House',    at: 200000,      pop: 4 },
+  { emoji: '🌳', name: 'Park',     at: 320000,      pop: 0 },
+  { emoji: '🏫', name: 'School',   at: 500000,      pop: 0 },
+  { emoji: '🏠', name: 'House',    at: 750000,      pop: 4 },
+  { emoji: '🏢', name: 'Tower',    at: 1000000,     pop: 0 },
+  { emoji: '🏠', name: 'House',    at: 2000000,     pop: 4 },
+  { emoji: '🏨', name: 'Hotel',    at: 3500000,     pop: 0 },
+  { emoji: '🏠', name: 'House',    at: 5000000,     pop: 4 },
+  { emoji: '🏬', name: 'Mall',     at: 8000000,     pop: 0 },
+  { emoji: '🏠', name: 'House',    at: 12000000,    pop: 4 },
+  { emoji: '🏟️', name: 'Stadium',  at: 20000000,    pop: 0 },
+  { emoji: '🏠', name: 'House',    at: 35000000,    pop: 4 },
+  { emoji: '🌳', name: 'Park',     at: 50000000,    pop: 0 },
+  { emoji: '🏢', name: 'Tower',    at: 75000000,    pop: 0 },
+  { emoji: '🏠', name: 'House',    at: 100000000,   pop: 4 },
+  { emoji: '🏛️', name: 'Capitol',  at: 200000000,   pop: 0 },
+  { emoji: '🗼', name: 'Monument', at: 500000000,   pop: 0 },
+  { emoji: '🏙️', name: 'Megacity', at: 999000000,   pop: 0 },
+];
+const townLevels = [
+  { minBuilt: 0,  name: '🌾 Empty Land',    color: '#666' },
+  { minBuilt: 1,  name: '🏘️ Tiny Village',  color: '#5a8a3a' },
+  { minBuilt: 5,  name: '🏡 Village',       color: '#4a7a2a' },
+  { minBuilt: 10, name: '🏙️ Small Town',    color: '#3a6a8a' },
+  { minBuilt: 16, name: '🌆 Town',          color: '#2a5aaa' },
+  { minBuilt: 22, name: '🌇 City',          color: '#1a4a9a' },
+  { minBuilt: 27, name: '🌃 Metropolis',    color: '#0a3080' },
+];
+function renderTown() {
+  const earned = G.totalEarned;
+  const builtCount = townSlots.filter(s => earned >= s.at).length;
+  let levelInfo = townLevels[0];
+  townLevels.forEach(l => { if (builtCount >= l.minBuilt) levelInfo = l; });
+  const pop = townSlots.filter(s => earned >= s.at).reduce((sum, s) => sum + s.pop, 0);
+  const nextSlot = townSlots.find(s => earned < s.at);
+
+  let cells = '';
+  townSlots.forEach(s => {
+    const built = earned >= s.at;
+    if (built) {
+      cells += `<div class="town-cell" title="${s.name}">${s.emoji}<span class="cell-label">${s.name}</span></div>`;
+    } else {
+      cells += `<div class="town-cell locked" title="Unlocks at $${fmt(s.at)}">🌿</div>`;
+    }
+  });
+
+  const nextHint = nextSlot
+    ? `⬆️ Next building: ${nextSlot.emoji} ${nextSlot.name} — earn $${fmt(nextSlot.at)} total (you have $${fmt(earned)})`
+    : '🎉 All buildings unlocked! You built a Metropolis!';
+
+  return `<div id="town-container">
+    <div class="town-level-banner" style="background:${levelInfo.color};">${levelInfo.name}</div>
+    <div class="town-stats">
+      <div class="town-stat"><span class="town-stat-label">Buildings</span><span class="town-stat-val">${builtCount}/30</span></div>
+      <div class="town-stat"><span class="town-stat-label">Population</span><span class="town-stat-val">👥 ${pop}</span></div>
+      <div class="town-stat"><span class="town-stat-label">Total Earned</span><span class="town-stat-val">$${fmt(earned)}</span></div>
+    </div>
+    <div class="town-grid">${cells}</div>
+    <div class="town-next">${nextHint}</div>
+    <div style="margin-top:5px;font-size:10px;color:#666;">
+      💡 Taxes from your accounting firm pay for these buildings! Keep earning to grow your town.
+    </div>
+  </div>`;  // all values from internal game state — no user input rendered here
 }
 
 // ══════════════════════════════════════════════
