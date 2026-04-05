@@ -2386,7 +2386,10 @@ function loadScores() {
 }
 function saveScore(name, score, timeMs) {
   const scores = loadScores();
-  scores.push({ name: (name||'Anonymous').substring(0,20), score, timeMs, date: new Date().toLocaleDateString() });
+  const builtCount = townSlots.filter(s => G.totalEarned >= s.at).length;
+  let lvlInfo = townLevels[0];
+  townLevels.forEach(l => { if (builtCount >= l.minBuilt) lvlInfo = l; });
+  scores.push({ name: (name||'Anonymous').substring(0,20), score, timeMs, date: new Date().toLocaleDateString(), buildings: builtCount, townLevel: lvlInfo.name });
   scores.sort((a,b) => b.score - a.score);
   localStorage.setItem('taxclicker_scores', JSON.stringify(scores.slice(0,10)));
 }
@@ -2402,16 +2405,17 @@ function renderScoresTable() {
     '<tr><th style="background:var(--cell-header);border:1px solid var(--cell-border);padding:3px 6px;">#</th>' +
     '<th style="background:var(--cell-header);border:1px solid var(--cell-border);padding:3px 6px;">Name</th>' +
     '<th style="background:var(--cell-header);border:1px solid var(--cell-border);padding:3px 6px;">Score</th>' +
-    '<th style="background:var(--cell-header);border:1px solid var(--cell-border);padding:3px 6px;">Time</th>' +
-    '<th style="background:var(--cell-header);border:1px solid var(--cell-border);padding:3px 6px;">Date</th></tr>';
+    '<th style="background:var(--cell-header);border:1px solid var(--cell-border);padding:3px 6px;">Town</th>' +
+    '<th style="background:var(--cell-header);border:1px solid var(--cell-border);padding:3px 6px;">Time</th></tr>';
   scores.forEach((s,i) => {
     const medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1);
+    const townStr = s.buildings != null ? '🏠' + s.buildings + ' — ' + (s.townLevel||'?') : '—';
     html += '<tr style="' + (i===0?'background:#fff8dc;':'') + '">' +
       '<td style="border:1px solid var(--cell-border);padding:3px 6px;text-align:center;">' + medal + '</td>' +
       '<td style="border:1px solid var(--cell-border);padding:3px 6px;font-weight:700;">' + s.name + '</td>' +
       '<td style="border:1px solid var(--cell-border);padding:3px 6px;text-align:right;color:var(--green-money);font-weight:700;">$' + fmt(s.score) + '</td>' +
-      '<td style="border:1px solid var(--cell-border);padding:3px 6px;text-align:center;">' + fmtTime(s.timeMs) + '</td>' +
-      '<td style="border:1px solid var(--cell-border);padding:3px 6px;text-align:center;color:#888;">' + s.date + '</td></tr>';
+      '<td style="border:1px solid var(--cell-border);padding:3px 6px;font-size:10px;">' + townStr + '</td>' +
+      '<td style="border:1px solid var(--cell-border);padding:3px 6px;text-align:center;">' + fmtTime(s.timeMs) + '</td></tr>';
   });
   html += '</table>';
   wrap.innerHTML = html; // all values from localStorage (user-controlled name) — names are stored as plain text and only rendered in this controlled game UI
