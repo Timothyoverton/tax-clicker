@@ -675,9 +675,11 @@ html, body {
         <div style="margin-bottom:6px;font-size:12px;font-weight:700;">YOUR NAME:</div>
         <input id="player-name-input" type="text" maxlength="20" placeholder="Enter your name..."
           style="font-family:'IBM Plex Mono',monospace;font-size:13px;padding:4px 8px;border:2px inset var(--win-light);background:white;width:200px;text-align:center;">
-        <div style="margin-top:10px;">
-          <button onclick="startGame()" style="background:linear-gradient(180deg,#ffe4b5,#daa520);border:2px outset var(--win-light);padding:6px 32px;cursor:pointer;font-family:'VT323',monospace;font-size:20px;font-weight:700;letter-spacing:1px;">▶ PLAY</button>
+        <div style="margin-top:10px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
+          <button onclick="startGame()" style="background:linear-gradient(180deg,#ffe4b5,#daa520);border:2px outset var(--win-light);padding:6px 32px;cursor:pointer;font-family:'VT323',monospace;font-size:20px;font-weight:700;letter-spacing:1px;">▶ NEW GAME</button>
+          <button id="continue-btn" onclick="continueGame()" style="display:none;background:linear-gradient(180deg,#c8e6ff,#4a90d9);border:2px outset var(--win-light);padding:6px 20px;cursor:pointer;font-family:'VT323',monospace;font-size:20px;font-weight:700;letter-spacing:1px;color:white;">⏩ CONTINUE</button>
         </div>
+        <div id="continue-info" style="display:none;margin-top:4px;font-size:10px;color:#336699;font-weight:700;text-align:center;"></div>
         <div style="margin-top:6px;font-size:10px;color:#666;">Goal: Earn as much profit as possible in 15 minutes!</div>
       </div>
     </div>
@@ -1693,6 +1695,11 @@ function tick(){
     G._lastRender = now;
     renderTab();
   }
+  // Auto-save every 30 seconds
+  if (!G._lastSave || now - G._lastSave >= 30000) {
+    G._lastSave = now;
+    saveGame();
+  }
   renderOffice();updateStatus();checkMilestones();
   requestAnimationFrame(tick);
 }
@@ -1738,6 +1745,7 @@ function closeRestart() {
 }
 function doRestart() {
   closeRestart();
+  clearSave();
   G.money = 0; G.totalEarned = 0; G.totalClicks = 0; G.clientsServed = 0;
   G.clickValue = 1; G.perSecond = 0; G.salesMultiplier = 1;
   G.taxRushActive = false; G.taxRushMultiplier = 1;
@@ -1776,10 +1784,12 @@ function checkWin() {
   if (G.totalEarned >= 1e9) {
     G.gameWon = true;
     G.winByBillion = true;
+    clearSave();
     showWinScreen();
   } else if ((Date.now() - G.startTime) / 1000 >= 900) {
     G.gameWon = true;
     G.winByBillion = false;
+    clearSave();
     showWinScreen();
   }
 }
@@ -1976,6 +1986,56 @@ function renderScoresTable() {
   html += '</table>';
   wrap.innerHTML = html; // all values from localStorage (user-controlled name) — names are stored as plain text and only rendered in this controlled game UI
 }
+// ══════════════════════════════════════════════
+//  AUTO-SAVE
+// ══════════════════════════════════════════════
+const SAVE_KEY = 'taxclicker_autosave';
+
+function saveGame() {
+  if (!G.gameStarted || G.gameWon) return;
+  const data = {
+    G: Object.assign({}, G),
+    upgrades: upgrades.map(u => u.owned),
+    savedAt: Date.now()
+  };
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify(data)); } catch(e) {}
+}
+
+function clearSave() {
+  try { localStorage.removeItem(SAVE_KEY); } catch(e) {}
+}
+
+function loadSave() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return null;
+    const data = JSON.parse(raw);
+    // Discard saves older than 15 min (stale completed game)
+    if (!data || Date.now() - data.savedAt > 900000) { clearSave(); return null; }
+    // Discard if the saved game had already run out of time
+    const elapsed = (data.savedAt - data.G.startTime) / 1000;
+    if (elapsed >= 900) { clearSave(); return null; }
+    return data;
+  } catch(e) { return null; }
+}
+
+function continueGame() {
+  const data = loadSave();
+  if (!data) return;
+  // Restore G fields
+  Object.assign(G, data.G);
+  // Patch startTime forward by the gap since the save, so the timer continues naturally
+  const gap = Date.now() - data.savedAt;
+  G.startTime = G.startTime + gap;  // shift start forward so elapsed time is preserved
+  G.lastTick = Date.now();
+  // Restore upgrades
+  upgrades.forEach((u, i) => { u.owned = data.upgrades[i] || 0; });
+  recalc();
+  G.gameStarted = true;
+  document.getElementById('scoreboard-screen').style.display = 'none';
+  renderTab(); updateStatus();
+}
+
 function showScoreboard(msg) {
   renderScoresTable();
   if (msg) {
@@ -1984,6 +2044,19 @@ function showScoreboard(msg) {
   } else {
     const el = document.getElementById('sb-message');
     if (el) el.style.display = 'none';
+  }
+  // Show Continue button if a valid save exists
+  const save = loadSave();
+  const contBtn = document.getElementById('continue-btn');
+  const contInfo = document.getElementById('continue-info');
+  if (save && contBtn) {
+    const elapsed = Math.floor((save.savedAt - save.G.startTime) / 1000);
+    const minsLeft = Math.ceil((900 - elapsed) / 60);
+    contBtn.style.display = 'inline-block';
+    if (contInfo) { contInfo.textContent = '💾 Saved game: $' + fmt(save.G.totalEarned) + ' earned, ~' + minsLeft + ' min left'; contInfo.style.display = 'block'; }
+  } else if (contBtn) {
+    contBtn.style.display = 'none';
+    if (contInfo) contInfo.style.display = 'none';
   }
   document.getElementById('scoreboard-screen').style.display = 'flex';
 }
@@ -1999,6 +2072,8 @@ function startGame() {
 //  INIT
 // ══════════════════════════════════════════════
 window.addEventListener('resize',resizeCanvas);
+document.addEventListener('visibilitychange', () => { if (document.hidden) saveGame(); });
+window.addEventListener('beforeunload', saveGame);
 resizeCanvas();recalc();renderTab();updateStatus();tick();
 showScoreboard();
 document.getElementById('player-name-input').addEventListener('keydown', e => { if (e.key==='Enter') startGame(); });
