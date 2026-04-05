@@ -410,6 +410,9 @@ html, body {
 .town-cell:not(.locked):hover { transform: scale(1.08); z-index: 5; }
 .town-cell.new-unlock { animation: popIn 0.6s cubic-bezier(0.175,0.885,0.32,1.275); box-shadow: 0 0 8px 3px #ffe066; }
 @keyframes popIn { 0%{transform:scale(0) rotate(-10deg);opacity:0;} 70%{transform:scale(1.25) rotate(3deg);} 100%{transform:scale(1) rotate(0deg);opacity:1;} }
+.town-cell.tappable { cursor: pointer; }
+.town-cell.town-tap { animation: townTap 0.25s ease; }
+@keyframes townTap { 0%{transform:scale(1);} 40%{transform:scale(0.82) rotate(-5deg);} 80%{transform:scale(1.15) rotate(3deg);} 100%{transform:scale(1);} }
 .town-cell .cell-label {
   font-size: 7px; color: rgba(0,0,0,0.55); line-height: 1; margin-top: 1px;
   font-family: 'IBM Plex Mono', monospace;
@@ -1388,7 +1391,7 @@ function renderTown() {
     const distanceFromFront = i - builtCount; // 0 = next to unlock, 1 = one after, etc.
     if (built) {
       const isNewest = isNewUnlock && i === builtCount - 1;
-      cells += `<div class="town-cell${isNewest?' new-unlock':''}" title="${s.name}: ${s.pop>0?'+'+s.pop+' pop':'generates income'}">${s.emoji}<span class="cell-label">${s.name}</span></div>`;
+      cells += `<div class="town-cell tappable${isNewest?' new-unlock':''}" onclick="tapBuilding(${i})" id="town-cell-${i}" title="Tap for bonus! ${s.name}: ${s.pop>0?'+'+s.pop+' pop':'generates income'}">${s.emoji}<span class="cell-label">${s.name}</span></div>`;
     } else if (distanceFromFront < 3) {
       // Show next 3 as faded previews with cost
       const pct = distanceFromFront === 0 ? 70 : distanceFromFront === 1 ? 40 : 20;
@@ -1638,6 +1641,31 @@ function doPowerClick() {
   const btnEl = document.getElementById('power-click-btn');
   const rect = btnEl ? btnEl.getBoundingClientRect() : {left: window.innerWidth/2, top: window.innerHeight/2};
   showFloat(rect.left + 60, rect.top, earned);
+  checkWin();
+}
+
+function tapBuilding(idx) {
+  if (G.gameWon) return;
+  const s = townSlots[idx];
+  if (!s || G.totalEarned < s.at) return;
+  // Bonus = building pop value * tax rate, min $1
+  const bonus = Math.max(1, Math.round((s.pop || 1) * (G.taxRate / 100) * 10 * G.salesMultiplier));
+  G.money += bonus; G.totalEarned += bonus; G.totalClicks++;
+  G.clickRevenue += bonus;
+  playSound('click');
+  // Animate the cell
+  const cell = document.getElementById('town-cell-' + idx);
+  if (cell) {
+    cell.classList.remove('town-tap');
+    void cell.offsetWidth; // reflow to restart animation
+    cell.classList.add('town-tap');
+  }
+  // Show floating money above the cell
+  const cellEl = document.getElementById('town-cell-' + idx);
+  if (cellEl) {
+    const r = cellEl.getBoundingClientRect();
+    showFloat(r.left + r.width/2, r.top, bonus);
+  }
   checkWin();
 }
 
