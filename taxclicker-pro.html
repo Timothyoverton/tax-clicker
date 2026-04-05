@@ -2467,6 +2467,16 @@ function showWinScreen() {
         '</table>';
     })() +
 
+    (() => {
+      const earned = G._badges && G._badges.length > 0;
+      if (!earned) return '';
+      const badgeEmojis = (G._badges || []).map(id => achievementDefs.find(d => d.id === id)?.emoji || '').join(' ');
+      const badgeLabels = (G._badges || []).map(id => achievementDefs.find(d => d.id === id)?.label || '').join(', ');
+      return '<h2>🏅 BADGES EARNED (' + G._badges.length + '/' + achievementDefs.length + ')</h2>' +
+        '<div style="background:#fffde7;border:2px inset var(--win-dark);padding:8px;font-size:22px;letter-spacing:3px;text-align:center;margin:6px 0;">' + badgeEmojis + '</div>' +
+        '<div style="font-size:9px;color:#666;text-align:center;margin-bottom:4px;">' + badgeLabels + '</div>';
+    })() +
+
     '<h2>🏅 LEGENDARY HIRES</h2>' +
     '<table>' +
       '<tr><td>🐐 Max Wellington</td><td class="stat-val">' + (hasSean ? '✅ Hired' : '❌ Not Hired') + '</td></tr>' +
