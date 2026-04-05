@@ -679,6 +679,7 @@ const G = {
   milestones: [], lastTick: Date.now(),
   eventTimer: 0, nextEventIn: 45 + Math.random() * 30,
   townEventMult: 1, townEventTimer: 0, townNextEventIn: 90 + Math.random() * 60,
+  townLevelIdx: 0,
   notifQueue: [],
   // Win tracking
   startTime: Date.now(), gameWon: false, winByBillion: false,
@@ -850,6 +851,16 @@ const milestoneList = [
   { id: 'm9', at: 500000000, title: 'Half a Billion!', msg: '$500 MILLION!<br>You can almost taste the billion.<br>Keep pushing — the finish line is in sight!' },
 ];
 
+const townLevelUpMsgs = [
+  null, // index 0 = "Empty Land", no popup
+  { title: '🏘️ You built a Tiny Village!', msg: 'Your first building is up!<br>A few families have moved in.<br><br>🌱 Keep earning to unlock more buildings!' },
+  { title: '🏡 Welcome to the Village!', msg: 'Your town is growing!<br>People love living here.<br><br>🌳 Build more to make it even better!' },
+  { title: '🏙️ Small Town achieved!', msg: 'Your town is getting busy!<br>Shops are opening and kids are going to school.<br><br>📈 Keep collecting taxes to grow more!' },
+  { title: '🌆 You built a real Town!', msg: 'Wow — your town is thriving!<br>Lots of people live, work and play here.<br><br>🏗️ Keep building towards a City!' },
+  { title: '🌇 CITY STATUS REACHED! 🎉', msg: '🎉🎉🎉 AMAZING! 🎉🎉🎉<br><br>You built a whole City!<br>Thousands of people call your town home.<br><br>⭐ Can you reach Metropolis?!' },
+  { title: '🌃 METROPOLIS! YOU WIN! 🏆', msg: '🏆🏆🏆 INCREDIBLE! 🏆🏆🏆<br><br>You built a METROPOLIS!<br>You are the greatest mayor ever!<br><br>🌟 Your town is now one of the biggest cities in the world!' },
+];
+
 function checkMilestones() {
   milestoneList.forEach(m => {
     if (G.totalEarned >= m.at && !G.milestones.includes(m.id)) {
@@ -858,6 +869,17 @@ function checkMilestones() {
       updateOfficeLevel();
     }
   });
+  // Check for town level-up
+  if (G.gameStarted) {
+    const builtCount = townSlots.filter(s => G.totalEarned >= s.at).length;
+    let newLevelIdx = 0;
+    townLevels.forEach((l, i) => { if (builtCount >= l.minBuilt) newLevelIdx = i; });
+    if (newLevelIdx > G.townLevelIdx) {
+      G.townLevelIdx = newLevelIdx;
+      const msg = townLevelUpMsgs[newLevelIdx];
+      if (msg) queueNotif(msg.title, msg.msg);
+    }
+  }
 }
 
 function updateOfficeLevel() {
@@ -1568,6 +1590,7 @@ function doRestart() {
   G.notifQueue = [];
   G.taxRate = 15;
   G.townEventMult = 1; G.townEventTimer = 0; G.townNextEventIn = 90 + Math.random() * 60;
+  G.townLevelIdx = 0;
   G.startTime = Date.now(); G.gameWon = false; G.winByBillion = false; G.gameStarted = false;
   G.peakRPS = 0; G.peakClickVal = 0;
   G.clickRevenue = 0; G.passiveRevenue = 0;
