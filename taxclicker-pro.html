@@ -297,6 +297,9 @@ html, body {
 }
 #big-click:active { border-style: inset; transform: translate(1px, 1px); }
 #big-click:hover { background: linear-gradient(180deg, #f0f0e0 0%, #d0d0c0 100%); }
+#big-click.rush-active { background: linear-gradient(180deg,#fff176,#ffcc00) !important; color: #cc2200 !important; border-color: #ff6600 !important; animation: rushPulse 0.4s infinite alternate; }
+@keyframes rushPulse { from{box-shadow:0 0 6px 2px #ff8800;} to{box-shadow:0 0 18px 6px #ff4400;} }
+@keyframes rushBg { 0%{background-position:0% 0;} 100%{background-position:200% 0;} }
 #power-click-wrap {
   padding: 4px 8px; text-align: center; min-height: 38px; background: var(--cell-header);
   border-top: 1px solid var(--cell-border);
@@ -506,6 +509,7 @@ html, body {
       <span class="balance-label">💰 Bank Balance</span>
       <span id="balance-amount">$0</span>
     </div>
+    <div id="rush-banner" style="display:none;text-align:center;padding:4px 8px;font-family:'VT323',monospace;font-size:20px;font-weight:700;background:linear-gradient(90deg,#ff4444,#ff8800,#ff4444);background-size:200% 100%;animation:rushBg 0.6s linear infinite;color:white;letter-spacing:1px;border:2px outset #cc2200;">⚡ TAX RUSH! CLICKS EARN MORE! ⚡</div>
     <div id="click-zone">
       <button id="big-click">📄 LODGE FINANCIALS & TAX RETURNS</button>
     </div>
@@ -1843,6 +1847,16 @@ function updateStatus(){
     else if(!G.gameWon&&(Date.now()-G.startTime)/1000>780)  tip='⚡ Less than 2 minutes left — click as fast as you can!';
     else                                                   tip='💡 Check the Town tab and try adjusting your Tax Rate!';
     tipEl.textContent=tip;
+  }
+  // Tax Rush visual — banner + glowing button
+  const rushBanner=document.getElementById('rush-banner');
+  const bigClickBtn=document.getElementById('big-click');
+  if(G.taxRushActive){
+    if(rushBanner) rushBanner.style.display='block';
+    if(bigClickBtn) bigClickBtn.classList.add('rush-active');
+  } else {
+    if(rushBanner) rushBanner.style.display='none';
+    if(bigClickBtn) bigClickBtn.classList.remove('rush-active');
   }
 }
 const formulaQuips=[
