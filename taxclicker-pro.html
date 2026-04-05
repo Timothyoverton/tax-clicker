@@ -527,6 +527,16 @@ html, body {
     </div>
     <div id="click-hint" style="text-align:center;font-family:'VT323',monospace;font-size:18px;color:#000080;padding:4px;animation:pulse 1s infinite;">👆 Click the button to earn money!</div>
     <div id="next-tip">💡 Keep clicking to earn money!</div>
+    <div id="town-mini" style="display:none;padding:4px 8px;background:#e8f4e8;border-top:1px solid #a8d8a8;font-size:10px;font-family:'IBM Plex Mono',monospace;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <span id="town-mini-level" style="font-weight:700;color:#2a6a2a;">🌾 Empty Land</span>
+        <span id="town-mini-income" style="color:#1a7a1a;font-weight:700;">$0/s</span>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:2px;">
+        <span id="town-mini-buildings">🏠 0/30 buildings</span>
+        <span id="town-mini-pop">👥 0 people</span>
+      </div>
+    </div>
   </div>
   <div id="sheet-panel">
     <div id="tab-bar">
@@ -1922,6 +1932,25 @@ function updateStatus(){
     else if(!G.gameWon&&(Date.now()-G.startTime)/1000>780)  tip='⚡ Less than 2 minutes left — click as fast as you can!';
     else                                                   tip='💡 Check the Town tab and try adjusting your Tax Rate!';
     tipEl.textContent=tip;
+  }
+  // Town mini-panel in left sidebar
+  const miniPanel = document.getElementById('town-mini');
+  if (miniPanel && G.gameStarted) {
+    miniPanel.style.display = 'block';
+    const builtCount = townSlots.filter(s => G.totalEarned >= s.at).length;
+    const pop = townSlots.filter(s => G.totalEarned >= s.at).reduce((s,t) => s + t.pop, 0);
+    let lvlInfo = townLevels[0];
+    townLevels.forEach(l => { if (builtCount >= l.minBuilt) lvlInfo = l; });
+    const eff = G.taxRushActive ? G.taxRushMultiplier : 1;
+    const totalPs = (G.perSecond * eff * G.salesMultiplier).toFixed(1);
+    const levelEl = document.getElementById('town-mini-level');
+    const incomeEl = document.getElementById('town-mini-income');
+    const bldEl = document.getElementById('town-mini-buildings');
+    const popEl = document.getElementById('town-mini-pop');
+    if (levelEl) levelEl.textContent = lvlInfo.name;
+    if (incomeEl) incomeEl.textContent = '$' + fmt(parseFloat(totalPs)) + '/s';
+    if (bldEl) bldEl.textContent = '🏠 ' + builtCount + '/30 buildings';
+    if (popEl) popEl.textContent = '👥 ' + pop + ' people';
   }
   // Tax Rush visual — banner + glowing button
   const rushBanner=document.getElementById('rush-banner');
