@@ -955,7 +955,39 @@ function renderDashboard() {
   const myPos = rank.findIndex(r => r.name === 'YOUR FIRM') + 1;
   const hasSean = upgrades.find(u => u.id === 'sean')?.owned > 0;
   const hasBrad = upgrades.find(u => u.id === 'brad')?.owned > 0;
-  return `<table class="sheet-table">
+
+  // Goal progress bar
+  const goalPct = Math.min(100, (G.totalEarned / 1e9) * 100);
+  const goalColor = goalPct >= 75 ? '#00c853' : goalPct >= 40 ? '#ff9800' : goalPct >= 10 ? '#2196f3' : '#9e9e9e';
+  const goalEmoji = goalPct >= 100 ? '🏆' : goalPct >= 75 ? '🚀' : goalPct >= 40 ? '⚡' : goalPct >= 10 ? '📈' : '🌱';
+  const builtCount = townSlots.filter(s => G.totalEarned >= s.at).length;
+  let townLevelInfo = townLevels[0];
+  townLevels.forEach(l => { if (builtCount >= l.minBuilt) townLevelInfo = l; });
+  const elapsed = (Date.now() - G.startTime) / 1000;
+  const timeLeft = Math.max(0, 1800 - elapsed);
+  const timePct = Math.round((timeLeft / 1800) * 100);
+
+  const goalPanel = `<div style="padding:8px 10px;background:white;border-bottom:2px solid var(--cell-border);">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+      <span style="font-family:'VT323',monospace;font-size:18px;font-weight:700;">🏆 GOAL: EARN $1,000,000,000</span>
+      <span style="font-size:12px;font-weight:700;color:${goalColor};">${goalEmoji} ${goalPct < 0.01 ? '<0.01' : goalPct.toFixed(2)}% there!</span>
+    </div>
+    <div style="background:#e0e0e0;border:2px inset var(--win-dark);height:22px;position:relative;margin-bottom:4px;">
+      <div style="height:100%;width:${goalPct}%;background:linear-gradient(90deg,${goalColor},${goalColor}cc);transition:width 0.5s;min-width:${G.totalEarned>0?2:0}px;"></div>
+      <div style="position:absolute;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;font-family:'VT323',monospace;font-size:15px;font-weight:700;color:#333;text-shadow:0 0 3px white;">
+        $${fmt(G.totalEarned)} / $1B
+      </div>
+    </div>
+    <div style="display:flex;gap:12px;font-size:10px;flex-wrap:wrap;">
+      <span>💰 <b>Cash:</b> $${fmt(G.money)}</span>
+      <span>📈 <b>/sec:</b> $${fmt(G.perSecond * totalMult)}</span>
+      <span>${townLevelInfo.name}</span>
+      <span>👥 <b>Pop:</b> ${townSlots.filter(s=>G.totalEarned>=s.at).reduce((s,t)=>s+t.pop,0)}</span>
+      <span style="color:${timeLeft<60?'#cc0000':timeLeft<300?'#ff9800':'#333'};">⏱ <b>${Math.floor(timeLeft/60)}:${String(Math.floor(timeLeft%60)).padStart(2,'0')}</b> left</span>
+    </div>
+  </div>`;
+
+  return goalPanel + `<table class="sheet-table">
     <colgroup><col width="30"><col width="200"><col width="120"><col width="140"><col></colgroup>
     <tr><th></th><th>A</th><th>B</th><th>C</th><th>D</th></tr>
     <tr><td class="row-header">1</td><td style="font-weight:700;font-size:13px;" colspan="4">📊 FINANCIAL DASHBOARD — FY${G.year}/${G.year+1} Q${G.quarter}</td></tr>
