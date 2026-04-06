@@ -467,6 +467,14 @@ html, body {
   transition: left 3s linear, top 3s linear;
   filter: drop-shadow(0 1px 1px rgba(0,0,0,0.3));
 }
+.weather-particle {
+  position:absolute; pointer-events:none; z-index:11; font-size:10px;
+  animation: weatherFall linear forwards;
+}
+@keyframes weatherFall {
+  0% { opacity:1; transform:translateY(0); }
+  100% { opacity:0.3; transform:translateY(80px); }
+}
 .vehicle-sprite {
   position:absolute; font-size:14px; z-index:9; pointer-events:none;
   filter: drop-shadow(0 1px 1px rgba(0,0,0,0.3));
@@ -2059,6 +2067,41 @@ function spawnVehicle() {
   setTimeout(() => v.remove(), (dur + 0.2) * 1000);
 }
 
+// Weather particles on the town grid during events
+function spawnWeatherParticles() {
+  const grid = document.getElementById('town-grid-el');
+  if (!grid || currentTab !== 'town') return;
+  const wrap = grid.parentElement;
+  // Determine weather type from active events
+  let emoji, count;
+  if (G.townEventMult < 1 || (G.crisisActive && G.crisisCostMult > 1 && !G.taxRushActive)) {
+    // Bad weather/crisis — rain
+    emoji = ['💧','🌧️','💦'];
+    count = 6;
+  } else if (G.townEventMult > 1.5 || G.taxRushActive) {
+    // Festival/boom — sparkles & coins
+    emoji = ['✨','🎉','⭐','💰'];
+    count = 4;
+  } else {
+    return; // no special weather
+  }
+  const gRect = grid.getBoundingClientRect();
+  const wRect = wrap.getBoundingClientRect();
+  const offX = gRect.left - wRect.left;
+  const offY = gRect.top - wRect.top;
+  for (let i = 0; i < count; i++) {
+    const p = document.createElement('span');
+    p.className = 'weather-particle';
+    p.textContent = emoji[Math.floor(Math.random() * emoji.length)];
+    p.style.left = (offX + Math.random() * gRect.width) + 'px';
+    p.style.top = (offY + Math.random() * 10) + 'px';
+    const dur = 0.8 + Math.random() * 0.6;
+    p.style.animationDuration = dur + 's';
+    wrap.appendChild(p);
+    setTimeout(() => p.remove(), dur * 1000 + 50);
+  }
+}
+
 function getDayPhase() {
   // 60s per day cycle, returns 0-1
   if (!G.gameStarted) return 0.3; // default to daytime
@@ -2528,6 +2571,7 @@ function tick(){
     if (_citizenTimer >= 4) { _citizenTimer = 0; spawnCitizens(); }
     _vehicleTimer += 2;
     if (_vehicleTimer >= 3) { _vehicleTimer = 0; spawnVehicle(); }
+    spawnWeatherParticles();
   }
   // Decay combo display when idle
   updateComboDisplay();
