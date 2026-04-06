@@ -2577,6 +2577,9 @@ function updateStatus(){
     const urgent=timeLeft<60?'⚠️':'⏱️';
     const timeStr=`${mins}:${secs.toString().padStart(2,'0')}`;
     document.getElementById('status-right').textContent=`${urgent} ${timeStr} left`;
+    // Update window title bar with current quarter
+    const tt=document.getElementById('title-text');
+    if(tt){const q='Q'+G.quarter;const expected='📊 TaxClicker Pro™ 98 - ['+q+'_Financials.xlsm]';if(tt.textContent!==expected)tt.textContent=expected;}
     const bigTimer=document.getElementById('big-timer');
     const bigTimerText=document.getElementById('big-timer-text');
     if(G.gameStarted&&bigTimer){
