@@ -463,6 +463,10 @@ html, body {
   transition: left 3s linear, top 3s linear;
   filter: drop-shadow(0 1px 1px rgba(0,0,0,0.3));
 }
+.vehicle-sprite {
+  position:absolute; font-size:14px; z-index:9; pointer-events:none;
+  filter: drop-shadow(0 1px 1px rgba(0,0,0,0.3));
+}
 .town-cell .cell-label {
   font-size: 7px; color: rgba(0,0,0,0.55); line-height: 1; margin-top: 1px;
   font-family: 'IBM Plex Mono', monospace;
@@ -1966,6 +1970,40 @@ function spawnCitizens() {
   }
 }
 
+// Vehicles driving across the town grid
+const vehicleEmojis = ['🚗','🚕','🚌','🚙','🏎️','🚐','🚒','🚑'];
+let _vehicleTimer = 0;
+function spawnVehicle() {
+  const grid = document.getElementById('town-grid-el');
+  if (!grid || currentTab !== 'town') return;
+  const wrap = grid.parentElement;
+  const builtCount = townSlots.filter(s => G.totalEarned >= s.at).length;
+  if (builtCount < 4) return; // need a few buildings for traffic
+  // Limit active vehicles
+  if (wrap.querySelectorAll('.vehicle-sprite').length >= 4) return;
+  const gRect = grid.getBoundingClientRect();
+  const wRect = wrap.getBoundingClientRect();
+  const offX = gRect.left - wRect.left;
+  const offY = gRect.top - wRect.top;
+  const v = document.createElement('span');
+  v.className = 'vehicle-sprite';
+  v.textContent = vehicleEmojis[Math.floor(Math.random() * vehicleEmojis.length)];
+  // Pick a random row within the grid
+  const rowY = offY + 8 + Math.random() * (gRect.height - 20);
+  const goRight = Math.random() < 0.5;
+  const startX = goRight ? (offX - 20) : (offX + gRect.width + 4);
+  const endX = goRight ? (offX + gRect.width + 4) : (offX - 20);
+  if (!goRight) v.style.transform = 'scaleX(-1)';
+  v.style.left = startX + 'px';
+  v.style.top = rowY + 'px';
+  // Speed: 3-5 seconds to cross
+  const dur = 3 + Math.random() * 2;
+  v.style.transition = 'left ' + dur + 's linear';
+  wrap.appendChild(v);
+  setTimeout(() => v.style.left = endX + 'px', 30);
+  setTimeout(() => v.remove(), (dur + 0.2) * 1000);
+}
+
 function getDayPhase() {
   // 60s per day cycle, returns 0-1
   if (!G.gameStarted) return 0.3; // default to daytime
@@ -2426,6 +2464,8 @@ function tick(){
     // Spawn walking citizens every ~4 seconds
     _citizenTimer += 2;
     if (_citizenTimer >= 4) { _citizenTimer = 0; spawnCitizens(); }
+    _vehicleTimer += 2;
+    if (_vehicleTimer >= 3) { _vehicleTimer = 0; spawnVehicle(); }
   }
   // Decay combo display when idle
   updateComboDisplay();
