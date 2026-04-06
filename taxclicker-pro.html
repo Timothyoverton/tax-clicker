@@ -1583,7 +1583,7 @@ function triggerDisaster() {
   G.disabledBuildings[target] = Date.now() + duration;
   playSound('disaster');
   queueNotif(dtype.icon + ' ' + dtype.name,
-    dtype.msg + '<br>' + townSlots[target].emoji + ' ' + townSlots[target].name + ' is out!<br>Build a <b>' + dtype.service + '</b> to prevent this!');
+    dtype.msg + '<br>' + townSlots[target].emoji + ' ' + townSlots[target].name + ' is out!<br>🔧 <b>Tap it 8 times</b> to fix it!');
   if (currentTab === 'town') renderTab();
   setTimeout(() => {
     delete G.disabledBuildings[target];
@@ -1738,7 +1738,8 @@ function renderTown() {
       if (isConstructing) {
         cells += `<div class="town-cell new-unlock" id="town-cell-${i}" style="background:#f5d690;">🏗️<span class="cell-label" style="font-size:7px;">Building...</span></div>`;
       } else {
-        cells += `<div class="town-cell tappable${isNewest?' new-unlock':''}${fireClass}" onclick="tapBuilding(${i})" id="town-cell-${i}" title="${isDisabled?'🔥 Out of action!':('Tap for bonus! '+s.name+': '+(s.pop>0?'+'+s.pop+' pop':'generates income'))}">${s.emoji}<span class="cell-label">${isDisabled?'🔥 OUT':s.name}</span></div>`;
+        const repairLeft = isDisabled ? (8 - (G._repairTaps && G._repairTaps[i] || 0)) : 0;
+        cells += `<div class="town-cell tappable${isNewest?' new-unlock':''}${fireClass}" onclick="tapBuilding(${i})" id="town-cell-${i}" title="${isDisabled?'🔧 Tap '+repairLeft+'x to fix!':('Tap for bonus! '+s.name+': '+(s.pop>0?'+'+s.pop+' pop':'generates income'))}">${s.emoji}<span class="cell-label">${isDisabled?'🔧 Tap to fix!':s.name}</span></div>`;
       }
     } else if (distanceFromFront < 3) {
       // Show next 3 as faded previews with cost
@@ -2053,8 +2054,48 @@ function tapBuilding(idx) {
   if (G.gameWon) return;
   const s = townSlots[idx];
   if (!s || G.totalEarned < s.at) return;
-  // Disabled buildings give no tap bonus
-  if (G.disabledBuildings[idx] && G.disabledBuildings[idx] > Date.now()) return;
+  // Disabled buildings — tap to repair!
+  if (G.disabledBuildings[idx] && G.disabledBuildings[idx] > Date.now()) {
+    if (!G._repairTaps) G._repairTaps = {};
+    if (!G._repairTaps[idx]) G._repairTaps[idx] = 0;
+    G._repairTaps[idx]++;
+    playSound('click');
+    const cell = document.getElementById('town-cell-' + idx);
+    if (cell) { cell.classList.remove('town-tap'); void cell.offsetWidth; cell.classList.add('town-tap'); }
+    // Show repair progress
+    const cellEl = document.getElementById('town-cell-' + idx);
+    if (cellEl) {
+      const r = cellEl.getBoundingClientRect();
+      const tapsNeeded = 8;
+      const left = tapsNeeded - G._repairTaps[idx];
+      if (left > 0) {
+        const p = document.createElement('span');
+        p.style.cssText = 'position:fixed;font-size:11px;pointer-events:none;z-index:500;font-family:VT323,monospace;font-weight:700;color:#fff;text-shadow:1px 1px 2px #000;transition:all 0.5s ease-out;';
+        p.textContent = '🔧 ' + left + ' more!';
+        p.style.left = (r.left + r.width/2 - 20) + 'px';
+        p.style.top = (r.top - 4) + 'px';
+        document.body.appendChild(p);
+        requestAnimationFrame(() => { p.style.top = (r.top - 24) + 'px'; p.style.opacity = '0'; });
+        setTimeout(() => p.remove(), 600);
+      }
+      if (G._repairTaps[idx] >= tapsNeeded) {
+        // Fixed!
+        delete G.disabledBuildings[idx];
+        delete G._repairTaps[idx];
+        playSound('saved');
+        const pr = document.createElement('span');
+        pr.style.cssText = 'position:fixed;font-size:14px;pointer-events:none;z-index:500;font-family:VT323,monospace;font-weight:700;color:#28a745;text-shadow:1px 1px 2px #000;transition:all 0.8s ease-out;';
+        pr.textContent = '✅ FIXED!';
+        pr.style.left = (r.left + r.width/2 - 20) + 'px';
+        pr.style.top = (r.top - 4) + 'px';
+        document.body.appendChild(pr);
+        requestAnimationFrame(() => { pr.style.top = (r.top - 35) + 'px'; pr.style.opacity = '0'; });
+        setTimeout(() => pr.remove(), 900);
+        if (currentTab === 'town') renderTab();
+      }
+    }
+    return;
+  }
   // Building-specific bonus multiplier
   const info = buildingTapInfo[s.name] || { mult: 1, emoji: ['💰'], sound: 'click' };
   const bonus = Math.max(1, Math.round((s.pop || 1) * (G.taxRate / 100) * 10 * G.salesMultiplier * info.mult));
@@ -2821,7 +2862,7 @@ function doRestart() {
   G.townLevelIdx = 0; G.townBuiltCount = 0; G.townNewUnlockAt = 0; G.cityServices = {};
   G.disabledBuildings = {}; G.disasterTimer = 0; G.nextDisasterIn = 120 + Math.random() * 60;
   G.startTime = Date.now(); G.gameWon = false; G.winByBillion = false; G.gameStarted = false;
-  G._badges = []; G._pbBeaten = false; G._newspapers = []; G._passiveTiersDone = []; G._hitRank1 = false; G._survivedDisaster = false; G._constructing = {};
+  G._badges = []; G._pbBeaten = false; G._newspapers = []; G._passiveTiersDone = []; G._hitRank1 = false; G._survivedDisaster = false; G._constructing = {}; G._repairTaps = {};
   const tray = document.getElementById('badge-tray'); if (tray) { tray.style.display='none'; tray.textContent=''; }
   G.peakRPS = 0; G.peakClickVal = 0;
   G.clickRevenue = 0; G.passiveRevenue = 0;
