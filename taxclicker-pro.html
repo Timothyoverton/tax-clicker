@@ -1943,6 +1943,9 @@ document.getElementById('big-click').addEventListener('click', (e) => {
   checkWin();
 });
 document.addEventListener('keydown', (e) => {
+  // Skip all shortcuts when typing in an input field
+  const tag = e.target.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
   // M key toggles mute
   if ((e.key === 'm' || e.key === 'M') && !e.ctrlKey && !e.altKey && !e.metaKey) { toggleMute(); return; }
   // Number keys 1-8 switch tabs
