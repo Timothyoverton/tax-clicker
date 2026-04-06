@@ -555,7 +555,7 @@ html, body {
 <body>
 
 <div id="titlebar">
-  <span>📊 TaxClicker Pro™ 98 - [Q1_Financials.xlsm]</span>
+  <span id="title-text" onclick="titleEasterEgg()">📊 TaxClicker Pro™ 98 - [Q1_Financials.xlsm]</span>
   <div class="buttons">
     <div class="btn">_</div><div class="btn">□</div>
     <div class="btn" onclick="alert('ERROR: Accountants never close their spreadsheets.')">✕</div>
@@ -2940,6 +2940,29 @@ function doRestart() {
 function showAbout() {
   queueNotif('ℹ️ About TaxClicker Pro™ 98',
     '<b>TaxClicker Pro™ 98</b><br>Version 1.0.3<br>© 2026 TaxClicker Pty Ltd<br>⭐⭐⭐⭐⭐');
+}
+
+// Easter egg — tap title bar 5 times for a surprise
+let _eggClicks = [], _eggFound = false;
+function titleEasterEgg() {
+  if (!G.gameStarted || G.gameWon) return;
+  const now = Date.now();
+  _eggClicks.push(now);
+  _eggClicks = _eggClicks.filter(t => now - t < 2000);
+  if (_eggClicks.length >= 5 && !_eggFound) {
+    _eggFound = true;
+    const bonus = Math.max(1000, Math.round(G.totalEarned * 0.05));
+    G.money += bonus; G.totalEarned += bonus;
+    playSound('win');
+    launchConfetti();
+    queueNotif('🎉 SECRET FOUND!', '🌟 You found a secret! 🌟<br>+$' + fmt(bonus) + ' bonus money!<br><br>🤫 Don\'t tell anyone!');
+    const title = document.getElementById('title-text');
+    if (title) {
+      title.style.transition = 'color 0.3s';
+      title.style.color = '#ffd700';
+      setTimeout(() => title.style.color = '', 3000);
+    }
+  }
 }
 
 // ══════════════════════════════════════════════
