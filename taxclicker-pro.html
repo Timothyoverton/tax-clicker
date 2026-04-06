@@ -2444,8 +2444,10 @@ function resizeCanvas() {
 function renderOffice() {
   const W = canvas.width, H = canvas.height;
   ctx.clearRect(0,0,W,H);
-  ctx.fillStyle='#e8e0d0'; ctx.fillRect(0,0,W,H);
-  ctx.strokeStyle='#d8d0c0'; ctx.lineWidth=1;
+  const phase0 = getDayPhase();
+  const nightOffice = phase0 >= 0.5 && phase0 < 0.9;
+  ctx.fillStyle = nightOffice ? '#b8b0a0' : '#e8e0d0'; ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle = nightOffice ? '#a8a090' : '#d8d0c0'; ctx.lineWidth=1;
   for(let x=0;x<W;x+=24){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
   for(let y=0;y<H;y+=24){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
   ctx.fillStyle='#d0ccc0';ctx.fillRect(0,0,W,30);
@@ -2490,11 +2492,22 @@ function renderOffice() {
     ctx.fillStyle='#6b4226';ctx.fillRect(sx+16,sy+32,28,6);
   }
 
+  const phase = getDayPhase();
+  const isNight = phase >= 0.5 && phase < 0.9;
+  const isTwilight = (phase >= 0.4 && phase < 0.5) || phase >= 0.9;
   for(let wx=40;wx<W-40;wx+=80){
-    ctx.fillStyle='#b8d8f0';ctx.fillRect(wx,4,40,20);
+    ctx.fillStyle = isNight ? '#1a2a48' : isTwilight ? '#7a6a90' : '#b8d8f0';
+    ctx.fillRect(wx,4,40,20);
     ctx.strokeStyle='#8898a0';ctx.lineWidth=1.5;ctx.strokeRect(wx,4,40,20);
     ctx.beginPath();ctx.moveTo(wx+20,4);ctx.lineTo(wx+20,24);ctx.stroke();
     ctx.beginPath();ctx.moveTo(wx,14);ctx.lineTo(wx+40,14);ctx.stroke();
+    // Stars in windows at night
+    if (isNight) {
+      ctx.fillStyle='#fff';
+      ctx.fillRect(wx+8, 8, 2, 2);
+      ctx.fillRect(wx+28, 12, 2, 2);
+      if (Math.sin(Date.now()/600+wx) > 0.5) ctx.fillRect(wx+16, 16, 2, 2);
+    }
   }
 
   // Spawn dollar particles from occupied desks
@@ -2521,6 +2534,30 @@ function renderOffice() {
   }
   // Cap particle count
   if (officeParticles.length > 80) officeParticles.splice(0, officeParticles.length - 80);
+
+  // Night mode — dark overlay with desk lamp glows
+  if (isNight) {
+    ctx.save();
+    ctx.fillStyle = 'rgba(10,15,30,0.55)';
+    ctx.fillRect(0, 0, W, H);
+    // Desk lamp glow circles on occupied desks
+    for (let i = 0; i < Math.min(totalDesks, 20); i++) {
+      if (i >= 1 + totalStaff) continue; // only lit if occupied
+      const row = Math.floor(i / maxDesksPerRow), col = i % maxDesksPerRow;
+      const lx = 20 + col * 65 + 25, ly = 50 + row * 72 - 5;
+      const grad = ctx.createRadialGradient(lx, ly, 2, lx, ly, 28);
+      grad.addColorStop(0, 'rgba(255,220,100,0.35)');
+      grad.addColorStop(1, 'rgba(255,220,100,0)');
+      ctx.fillStyle = grad;
+      ctx.beginPath(); ctx.arc(lx, ly, 28, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.restore();
+  } else if (isTwilight) {
+    ctx.save();
+    ctx.fillStyle = 'rgba(40,20,60,0.2)';
+    ctx.fillRect(0, 0, W, H);
+    ctx.restore();
+  }
 }
 function drawDesk(x,y,occ,idx){
   ctx.fillStyle='#a08060';ctx.fillRect(x,y,50,30);
