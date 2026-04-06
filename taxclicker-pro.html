@@ -3235,7 +3235,9 @@ function loadSave() {
     if (!raw) return null;
     const data = JSON.parse(raw);
     // Discard saves older than 15 min (stale completed game)
-    if (!data || Date.now() - data.savedAt > 900000) { clearSave(); return null; }
+    if (!data) { clearSave(); return null; }
+    const savedDuration = (data.G && data.G.gameDuration) || 900;
+    if (Date.now() - data.savedAt > savedDuration * 1000) { clearSave(); return null; }
     // Discard if the saved game had already run out of time
     const elapsed = (data.savedAt - data.G.startTime) / 1000;
     if (elapsed >= (G.gameDuration||900)) { clearSave(); return null; }
@@ -3277,9 +3279,11 @@ function showScoreboard(msg) {
   const contInfo = document.getElementById('continue-info');
   if (save && contBtn) {
     const elapsed = Math.floor((save.savedAt - save.G.startTime) / 1000);
-    const minsLeft = Math.ceil(((G.gameDuration||900) - elapsed) / 60);
+    const saveDur = (save.G && save.G.gameDuration) || 900;
+    const minsLeft = Math.ceil((saveDur - elapsed) / 60);
+    const diffLabel = save.G.difficulty ? (' [' + save.G.difficulty.toUpperCase() + ']') : '';
     contBtn.style.display = 'inline-block';
-    if (contInfo) { contInfo.textContent = '💾 Saved game: $' + fmt(save.G.totalEarned) + ' earned, ~' + minsLeft + ' min left'; contInfo.style.display = 'block'; }
+    if (contInfo) { contInfo.textContent = '💾 Saved game: $' + fmt(save.G.totalEarned) + ' earned, ~' + minsLeft + ' min left' + diffLabel; contInfo.style.display = 'block'; }
   } else if (contBtn) {
     contBtn.style.display = 'none';
     if (contInfo) contInfo.style.display = 'none';
