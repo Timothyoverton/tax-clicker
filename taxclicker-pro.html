@@ -2462,7 +2462,7 @@ function renderOffice() {
   const maxDesksPerRow=Math.floor((W-30)/65);
   for(let i=0;i<Math.min(totalDesks,20);i++){
     const row=Math.floor(i/maxDesksPerRow),col=i%maxDesksPerRow;
-    drawDesk(20+col*65,50+row*72,i<1+totalStaff);
+    drawDesk(20+col*65,50+row*72,i<1+totalStaff,i);
   }
   if(hasPrinter)drawPrinter(W-55,50);
   if(hasCopier)drawCopier(W-55,120);
@@ -2522,16 +2522,31 @@ function renderOffice() {
   // Cap particle count
   if (officeParticles.length > 80) officeParticles.splice(0, officeParticles.length - 80);
 }
-function drawDesk(x,y,occ){
+function drawDesk(x,y,occ,idx){
   ctx.fillStyle='#a08060';ctx.fillRect(x,y,50,30);
   ctx.fillStyle='#c8a070';ctx.fillRect(x+2,y+2,46,26);
   ctx.fillStyle='#806040';ctx.fillRect(x+2,y+30,4,8);ctx.fillRect(x+44,y+30,4,8);
   ctx.fillStyle='#333';ctx.fillRect(x+15,y-14,22,16);
-  ctx.fillStyle='#4488aa';ctx.fillRect(x+17,y-12,18,12);
+  // Screen flicker — different colors per person
+  const screenColors = ['#4488aa','#44aa66','#aa8844','#8844aa','#44aaaa'];
+  const screenFlicker = Math.sin(Date.now()/400 + (idx||0)*2) > 0.3;
+  ctx.fillStyle = screenFlicker ? (screenColors[(idx||0) % screenColors.length]) : '#3a7a9a';
+  ctx.fillRect(x+17,y-12,18,12);
   ctx.fillStyle='#555';ctx.fillRect(x+23,y+2,6,4);
   ctx.fillStyle=occ?'#3355aa':'#888';ctx.fillRect(x+16,y+34,18,14);
   ctx.fillStyle=occ?'#2244aa':'#777';ctx.fillRect(x+14,y+30,22,6);
-  if(occ){ctx.fillStyle='#f0c8a0';ctx.beginPath();ctx.arc(x+25,y-22,6,0,Math.PI*2);ctx.fill();ctx.fillStyle='#554';ctx.fillRect(x+19,y-28,12,4);}
+  if(occ){
+    // Bobbing head animation — each person has a unique phase
+    const bob = Math.sin(Date.now()/500 + (idx||0)*1.7) * 1.5;
+    const headY = y - 22 + bob;
+    ctx.fillStyle='#f0c8a0';ctx.beginPath();ctx.arc(x+25,headY,6,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#554';ctx.fillRect(x+19,headY-6,12,4);
+    // Typing hands animation — arms move slightly
+    const typeBob = Math.sin(Date.now()/200 + (idx||0)*3) * 1;
+    ctx.fillStyle='#f0c8a0';
+    ctx.fillRect(x+14+typeBob, y+2, 4, 3);
+    ctx.fillRect(x+32-typeBob, y+2, 4, 3);
+  }
 }
 function drawPrinter(x,y){ctx.fillStyle='#ddd';ctx.fillRect(x,y,35,22);ctx.fillStyle='#bbb';ctx.fillRect(x+2,y+2,31,5);ctx.fillStyle='#fff';ctx.fillRect(x+5,y+16,25,4);ctx.fillStyle=Date.now()%1000<500?'#0f0':'#080';ctx.fillRect(x+28,y+9,4,4);}
 function drawCopier(x,y){ctx.fillStyle='#ccc';ctx.fillRect(x,y,38,30);ctx.fillStyle='#999';ctx.fillRect(x+3,y+3,32,10);ctx.fillStyle='#eee';ctx.fillRect(x+5,y+18,20,8);ctx.fillStyle='#aaa';ctx.fillRect(x+27,y+18,8,8);}
