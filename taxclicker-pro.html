@@ -143,6 +143,28 @@ html, body {
   position: fixed; top: 0; left: 0; width: 100%; height: 100%;
   pointer-events: none; z-index: 199; overflow: hidden;
 }
+#town-levelup-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  display: flex; align-items: center; justify-content: center;
+  pointer-events: none; z-index: 198;
+}
+#town-levelup-overlay .tlo-box {
+  background: linear-gradient(135deg, #1a237e, #4a148c);
+  border: 4px solid #fff; border-radius: 8px;
+  padding: 24px 48px; text-align: center;
+  box-shadow: 0 0 40px 10px rgba(255,255,100,0.4);
+  animation: tloShow 3s ease forwards;
+}
+#town-levelup-overlay .tlo-box .tlo-title { font-size: 13px; color: #ffe082; letter-spacing: 2px; font-family: 'VT323',monospace; }
+#town-levelup-overlay .tlo-box .tlo-name  { font-size: 36px; color: #fff; font-family: 'VT323',monospace; letter-spacing: 1px; margin: 4px 0; }
+#town-levelup-overlay .tlo-box .tlo-sub   { font-size: 13px; color: #b0bec5; font-family: 'VT323',monospace; }
+@keyframes tloShow {
+  0%   { opacity: 0; transform: scale(0.6); }
+  12%  { opacity: 1; transform: scale(1.08); }
+  20%  { transform: scale(1.0); }
+  70%  { opacity: 1; transform: scale(1.0); }
+  100% { opacity: 0; transform: scale(1.1); }
+}
 .confetti-piece {
   position: absolute; top: -16px; width: 10px; height: 12px;
   opacity: 0;
@@ -783,6 +805,7 @@ html, body {
 
 <!-- CONFETTI -->
 <div id="confetti-container"></div>
+<div id="town-levelup-overlay"></div>
 
 <!-- WIN SCREEN -->
 <div id="win-screen">
@@ -1101,8 +1124,10 @@ function checkMilestones() {
     townLevels.forEach((l, i) => { if (builtCount >= l.minBuilt) newLevelIdx = i; });
     if (newLevelIdx > G.townLevelIdx) {
       G.townLevelIdx = newLevelIdx;
-      const msg = townLevelUpMsgs[newLevelIdx];
-      if (msg) { queueNotif(msg.title, msg.msg); playSound('levelup'); }
+      const level = townLevels[newLevelIdx];
+      playSound('levelup');
+      launchConfetti();
+      showTownLevelBanner(level.name, level.color);
     }
     // Detect new building unlock for pop-in animation
     if (builtCount > G.townBuiltCount) {
@@ -2432,6 +2457,18 @@ function launchConfetti() {
     container.appendChild(el);
   }
   setTimeout(function() { while (container.firstChild) container.removeChild(container.firstChild); }, 6000);
+}
+
+function showTownLevelBanner(levelName, bgColor) {
+  const el = document.getElementById('town-levelup-overlay');
+  if (!el) return;
+  el.innerHTML = `<div class="tlo-box" style="background:linear-gradient(135deg,${bgColor||'#1a237e'},${bgColor||'#4a148c'});">
+    <div class="tlo-title">⬆️ TOWN LEVEL UP! ⬆️</div>
+    <div class="tlo-name">${levelName}</div>
+    <div class="tlo-sub">Keep collecting taxes to grow more!</div>
+  </div>`;
+  // Remove after animation completes (3s)
+  setTimeout(() => { if (el) el.innerHTML = ''; }, 3100);
 }
 
 function showWinScreen() {
