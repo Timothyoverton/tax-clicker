@@ -513,6 +513,35 @@ html, body {
   margin-top: 6px; padding: 5px 8px; font-size: 10px; color: #444;
   background: var(--highlight); border: 1px solid var(--cell-border);
 }
+
+/* Tablet portrait — stack panels vertically */
+@media (max-width: 768px) {
+  #main { flex-direction: column; height: auto; }
+  #office-panel { width: 100%; min-width: unset; border-right: none; border-bottom: 2px groove var(--win-light); max-height: 260px; }
+  #office-canvas-wrap { display: none; }
+  #sheet-panel { min-height: 50vh; }
+  .tab { font-size: 10px; padding: 3px 8px; }
+  #big-click { font-size: 18px !important; padding: 8px 16px !important; }
+  .town-grid { grid-template-columns: repeat(6, 1fr); gap: 2px; }
+  .town-cell { font-size: 18px; min-height: 36px; }
+  #big-timer { font-size: 24px; padding: 4px 10px; }
+  #balance-display { font-size: 16px; }
+  .sheet-table td, .sheet-table th { font-size: 10px; padding: 2px 4px; }
+  #scoreboard-screen { padding: 10px; }
+  #scoreboard-screen > div { width: 95%; max-width: none; padding: 8px; }
+}
+
+/* Phone — even more compact */
+@media (max-width: 480px) {
+  #office-panel { max-height: 200px; }
+  .tab { font-size: 9px; padding: 2px 5px; }
+  #big-click { font-size: 16px !important; padding: 6px 12px !important; }
+  .town-cell { font-size: 15px; min-height: 30px; }
+  .town-grid { grid-template-columns: repeat(5, 1fr); }
+  .cell-label { font-size: 6px; }
+  #big-timer { font-size: 20px; top: 4px; right: 4px; }
+  #tax-ticker { font-size: 11px; height: 16px; line-height: 16px; }
+}
 </style>
 </head>
 <body>
