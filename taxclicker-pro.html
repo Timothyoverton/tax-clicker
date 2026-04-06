@@ -444,10 +444,10 @@ html, body {
 .town-cell.tappable { cursor: pointer; }
 .town-cell.town-tap { animation: townTap 0.25s ease; }
 @keyframes townTap { 0%{transform:scale(1);} 40%{transform:scale(0.82) rotate(-5deg);} 80%{transform:scale(1.15) rotate(3deg);} 100%{transform:scale(1);} }
-.town-sky { position:relative;overflow:hidden;height:32px;border:2px inset var(--win-dark);border-bottom:none;max-width:420px;margin-bottom:0;transition:background 1.5s; }
-.town-sky.sky-happy   { background:linear-gradient(180deg,#87ceeb 0%,#b8e4f8 100%); }
-.town-sky.sky-ok      { background:linear-gradient(180deg,#aab8c8 0%,#c8d8e8 100%); }
-.town-sky.sky-unhappy { background:linear-gradient(180deg,#7a8a96 0%,#a0aab0 100%); }
+.town-sky { position:relative;overflow:hidden;height:32px;border:2px inset var(--win-dark);border-bottom:none;max-width:420px;margin-bottom:0;transition:background 2s ease; }
+.sky-stars { position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;transition:opacity 2s; }
+.sky-star { position:absolute;font-size:8px;animation:twinkle 2s ease-in-out infinite alternate; }
+@keyframes twinkle { 0%{opacity:0.3;} 100%{opacity:1;} }
 .sky-sun { position:absolute;top:4px;font-size:20px;animation:sunMove 30s linear infinite; }
 @keyframes sunMove { 0%{left:-24px;} 100%{left:calc(100% + 24px);} }
 .sky-cloud { position:absolute;top:6px;font-size:16px;opacity:0.85; }
@@ -1686,7 +1686,8 @@ function renderTown() {
       <div style="padding:3px 7px;background:#cce5ff;border:1px solid #4488cc;">🏫 Schools: ${schools} <span style="color:#555;">(+${((schoolMult-1)*100).toFixed(0)}% income)</span></div>
       <div style="padding:3px 7px;background:#fff3cd;border:1px solid #ffc107;">🏪 Shops: ${shops} <span style="color:#555;">(+$${shopFlat.toFixed(1)}/sec)</span></div>
     </div>
-    <div class="town-sky sky-happy" id="town-sky">
+    <div class="town-sky" id="town-sky">
+      <div class="sky-stars" id="sky-stars"></div>
       <span class="sky-sun" id="sky-sun">☀️</span>
       <span class="sky-cloud c1" id="sky-cloud1">☁️</span>
       <span class="sky-cloud c2" id="sky-cloud2">⛅</span>
@@ -1965,21 +1966,74 @@ function spawnCitizens() {
   }
 }
 
+function getDayPhase() {
+  // 60s per day cycle, returns 0-1
+  if (!G.gameStarted) return 0.3; // default to daytime
+  const elapsed = (Date.now() - G.startTime) / 1000;
+  return (elapsed % 60) / 60;
+}
 function updateTownSky() {
   const sky = document.getElementById('town-sky');
   if (!sky) return;
   const h = getHappinessScore();
-  const cls = h >= 70 ? 'sky-happy' : h >= 45 ? 'sky-ok' : 'sky-unhappy';
-  sky.className = 'town-sky ' + cls;
-  // Sun visible only when happy; rainy cloud when very unhappy
+  const phase = getDayPhase();
+  // phases: 0-0.4 day, 0.4-0.5 sunset, 0.5-0.9 night, 0.9-1.0 sunrise
+  const isNight = phase >= 0.5 && phase < 0.9;
+  const isSunset = phase >= 0.4 && phase < 0.5;
+  const isSunrise = phase >= 0.9;
+  let bg;
+  if (isNight) {
+    bg = h >= 45 ? 'linear-gradient(180deg,#0a1628 0%,#1a2a48 100%)'
+                 : 'linear-gradient(180deg,#1a1a2e 0%,#2a2a3e 100%)';
+  } else if (isSunset) {
+    bg = 'linear-gradient(180deg,#ff7b54 0%,#ffb347 50%,#87ceeb 100%)';
+  } else if (isSunrise) {
+    bg = 'linear-gradient(180deg,#ffb6c1 0%,#ffd700 50%,#87ceeb 100%)';
+  } else {
+    bg = h >= 70 ? 'linear-gradient(180deg,#87ceeb 0%,#b8e4f8 100%)'
+       : h >= 45 ? 'linear-gradient(180deg,#aab8c8 0%,#c8d8e8 100%)'
+       :           'linear-gradient(180deg,#7a8a96 0%,#a0aab0 100%)';
+  }
+  sky.style.background = bg;
+  // Sun/moon
   const sun = document.getElementById('sky-sun');
-  const c1  = document.getElementById('sky-cloud1');
-  const c2  = document.getElementById('sky-cloud2');
-  const c3  = document.getElementById('sky-cloud3');
-  if (sun) sun.textContent = h >= 70 ? '☀️' : h >= 45 ? '🌤️' : '🌧️';
-  if (c1)  c1.textContent  = h >= 45 ? '☁️' : '🌩️';
-  if (c2)  c2.textContent  = h >= 45 ? '⛅' : '☁️';
-  if (c3)  c3.textContent  = h >= 70 ? '☁️' : '🌧️';
+  if (sun) {
+    if (isNight) sun.textContent = '🌙';
+    else if (h >= 70) sun.textContent = '☀️';
+    else if (h >= 45) sun.textContent = '🌤️';
+    else sun.textContent = '🌧️';
+  }
+  // Clouds
+  const c1 = document.getElementById('sky-cloud1');
+  const c2 = document.getElementById('sky-cloud2');
+  const c3 = document.getElementById('sky-cloud3');
+  if (isNight) {
+    if (c1) c1.style.opacity = '0.3';
+    if (c2) c2.style.opacity = '0.2';
+    if (c3) c3.style.opacity = '0.15';
+  } else {
+    if (c1) { c1.style.opacity = '0.85'; c1.textContent = h >= 45 ? '☁️' : '🌩️'; }
+    if (c2) { c2.style.opacity = '0.85'; c2.textContent = h >= 45 ? '⛅' : '☁️'; }
+    if (c3) { c3.style.opacity = '0.85'; c3.textContent = h >= 70 ? '☁️' : '🌧️'; }
+  }
+  // Stars — spawn/remove using DOM methods (no innerHTML for safety)
+  const starsEl = document.getElementById('sky-stars');
+  if (starsEl) {
+    starsEl.style.opacity = isNight ? '1' : '0';
+    if (isNight && starsEl.children.length === 0) {
+      for (let i = 0; i < 12; i++) {
+        const s = document.createElement('span');
+        s.className = 'sky-star';
+        s.textContent = Math.random() < 0.3 ? '⭐' : '✨';
+        s.style.left = (5 + Math.random() * 90) + '%';
+        s.style.top = (2 + Math.random() * 60) + '%';
+        s.style.animationDelay = (Math.random() * 2) + 's';
+        starsEl.appendChild(s);
+      }
+    } else if (!isNight && starsEl.children.length > 0) {
+      while (starsEl.firstChild) starsEl.removeChild(starsEl.firstChild);
+    }
+  }
 }
 
 function spawnHappinessParticle() {
