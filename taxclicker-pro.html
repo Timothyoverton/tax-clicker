@@ -786,6 +786,9 @@ html, body {
         <div style="margin-bottom:6px;font-size:12px;font-weight:700;">YOUR NAME:</div>
         <input id="player-name-input" type="text" maxlength="20" placeholder="Enter your name..."
           style="font-family:'IBM Plex Mono',monospace;font-size:13px;padding:4px 8px;border:2px inset var(--win-light);background:white;width:200px;text-align:center;">
+        <div style="margin-top:8px;margin-bottom:6px;font-size:12px;font-weight:700;">🏙️ TOWN NAME:</div>
+        <input id="town-name-input" type="text" maxlength="20" placeholder="Name your town..."
+          style="font-family:'IBM Plex Mono',monospace;font-size:13px;padding:4px 8px;border:2px inset var(--win-light);background:white;width:200px;text-align:center;">
         <div style="margin-top:10px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
           <button onclick="startGame()" style="background:linear-gradient(180deg,#ffe4b5,#daa520);border:2px outset var(--win-light);padding:6px 32px;cursor:pointer;font-family:'VT323',monospace;font-size:20px;font-weight:700;letter-spacing:1px;">▶ NEW GAME</button>
           <button id="continue-btn" onclick="continueGame()" style="display:none;background:linear-gradient(180deg,#c8e6ff,#4a90d9);border:2px outset var(--win-light);padding:6px 20px;cursor:pointer;font-family:'VT323',monospace;font-size:20px;font-weight:700;letter-spacing:1px;color:white;">⏩ CONTINUE</button>
@@ -854,7 +857,7 @@ const G = {
   notifQueue: [],
   // Win tracking
   startTime: Date.now(), gameWon: false, winByBillion: false,
-  gameStarted: false, playerName: 'Anonymous',
+  gameStarted: false, playerName: 'Anonymous', townName: 'My Town',
   peakRPS: 0, peakClickVal: 0,
   clickRevenue: 0, passiveRevenue: 0,
   clickTimes: [],
@@ -1707,7 +1710,7 @@ function renderTown() {
       </div>` : '';
 
   return `<div id="town-container">
-    <div class="town-level-banner" style="background:${levelInfo.color};">${levelInfo.name}</div>
+    <div class="town-level-banner" style="background:${levelInfo.color};">${levelInfo.name} — Welcome to <b>${G.townName}</b>!</div>
     <div class="town-stats">
       <div class="town-stat"><span class="town-stat-label">Buildings</span><span class="town-stat-val">${builtCount}/30</span></div>
       <div class="town-stat"><span class="town-stat-label">Population</span><span class="town-stat-val">👥 ${pop}</span></div>
@@ -2333,7 +2336,7 @@ function updateStatus(){
     const incomeEl = document.getElementById('town-mini-income');
     const bldEl = document.getElementById('town-mini-buildings');
     const popEl = document.getElementById('town-mini-pop');
-    if (levelEl) levelEl.textContent = lvlInfo.name;
+    if (levelEl) levelEl.textContent = lvlInfo.name + ' — ' + G.townName;
     if (incomeEl) incomeEl.textContent = '$' + fmt(parseFloat(totalPs)) + '/s';
     if (bldEl) bldEl.textContent = '🏠 ' + builtCount + '/30 buildings';
     if (popEl) popEl.textContent = '👥 ' + pop + ' people';
@@ -2669,9 +2672,9 @@ function showTownLevelBanner(levelName, bgColor) {
   const el = document.getElementById('town-levelup-overlay');
   if (!el) return;
   el.innerHTML = `<div class="tlo-box" style="background:linear-gradient(135deg,${bgColor||'#1a237e'},${bgColor||'#4a148c'});">
-    <div class="tlo-title">⬆️ TOWN LEVEL UP! ⬆️</div>
+    <div class="tlo-title">⬆️ ${G.townName} LEVEL UP! ⬆️</div>
     <div class="tlo-name">${levelName}</div>
-    <div class="tlo-sub">Keep collecting taxes to grow more!</div>
+    <div class="tlo-sub">Keep collecting taxes to grow!</div>
   </div>`;
   // Remove after animation completes (3s)
   setTimeout(() => { if (el) el.innerHTML = ''; }, 3100);
@@ -2746,7 +2749,8 @@ function showWinScreen() {
       const builtEmoji = townSlots.filter(s => G.totalEarned >= s.at).map(s => s.emoji).join(' ');
       const lockedCount = 30 - builtCount;
       const lockedStr = lockedCount > 0 ? ' <span style="opacity:0.3">' + '🔒 '.repeat(Math.min(lockedCount, 6)).trim() + (lockedCount > 6 ? ' +' + (lockedCount-6) + ' more' : '') + '</span>' : '';
-      return '<h2>🏙️ YOUR TOWN</h2>' +
+      const safeTownName = G.townName.replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      return '<h2>🏙️ ' + safeTownName + '</h2>' +
         '<div style="background:#e8f4e8;border:2px inset var(--win-dark);padding:8px;margin:6px 0;font-size:20px;line-height:1.6;text-align:center;word-break:break-all;">' +
           (builtEmoji || '🌾 Nothing built yet') + lockedStr +
         '</div>' +
@@ -2829,7 +2833,7 @@ function saveScore(name, score, timeMs) {
   const builtCount = townSlots.filter(s => G.totalEarned >= s.at).length;
   let lvlInfo = townLevels[0];
   townLevels.forEach(l => { if (builtCount >= l.minBuilt) lvlInfo = l; });
-  scores.push({ name: (name||'Anonymous').substring(0,20), score, timeMs, date: new Date().toLocaleDateString(), buildings: builtCount, townLevel: lvlInfo.name });
+  scores.push({ name: (name||'Anonymous').substring(0,20), score, timeMs, date: new Date().toLocaleDateString(), buildings: builtCount, townLevel: lvlInfo.name, townName: (G.townName||'My Town').substring(0,20) });
   scores.sort((a,b) => b.score - a.score);
   localStorage.setItem('taxclicker_scores', JSON.stringify(scores.slice(0,10)));
 }
@@ -2849,7 +2853,8 @@ function renderScoresTable() {
     '<th style="background:var(--cell-header);border:1px solid var(--cell-border);padding:3px 6px;">Time</th></tr>';
   scores.forEach((s,i) => {
     const medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1);
-    const townStr = s.buildings != null ? '🏠' + s.buildings + ' — ' + (s.townLevel||'?') : '—';
+    const tn = s.townName ? s.townName.replace(/</g,'&lt;').replace(/>/g,'&gt;') : null;
+    const townStr = s.buildings != null ? (tn ? '<b>' + tn + '</b> ' : '') + '🏠' + s.buildings + ' ' + (s.townLevel||'?') : '—';
     html += '<tr style="' + (i===0?'background:#fff8dc;':'') + '">' +
       '<td style="border:1px solid var(--cell-border);padding:3px 6px;text-align:center;">' + medal + '</td>' +
       '<td style="border:1px solid var(--cell-border);padding:3px 6px;font-weight:700;">' + s.name + '</td>' +
@@ -2939,6 +2944,8 @@ function showScoreboard(msg) {
 function startGame() {
   const inp = document.getElementById('player-name-input');
   G.playerName = (inp ? inp.value.trim() : '') || 'Anonymous';
+  const townInp = document.getElementById('town-name-input');
+  G.townName = (townInp ? townInp.value.trim() : '') || 'My Town';
   G.gameStarted = true;
   G.startTime = Date.now();
   // Store personal best for this player so we can celebrate beating it mid-game
@@ -2958,7 +2965,8 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) saveG
 window.addEventListener('beforeunload', saveGame);
 resizeCanvas();recalc();renderTab();updateStatus();tick();
 showScoreboard();
-document.getElementById('player-name-input').addEventListener('keydown', e => { if (e.key==='Enter') startGame(); });
+document.getElementById('player-name-input').addEventListener('keydown', e => { if (e.key==='Enter') document.getElementById('town-name-input').focus(); });
+document.getElementById('town-name-input').addEventListener('keydown', e => { if (e.key==='Enter') startGame(); });
 
 setTimeout(()=>{
   queueNotif('👋 Welcome!',
