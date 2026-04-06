@@ -442,6 +442,8 @@ html, body {
 .town-cell.new-unlock { animation: popIn 0.6s cubic-bezier(0.175,0.885,0.32,1.275); box-shadow: 0 0 8px 3px #ffe066; }
 @keyframes popIn { 0%{transform:scale(0) rotate(-10deg);opacity:0;} 70%{transform:scale(1.25) rotate(3deg);} 100%{transform:scale(1) rotate(0deg);opacity:1;} }
 .town-cell.tappable { cursor: pointer; }
+.town-cell.constructing { animation: constructShake 0.3s ease-in-out infinite; background: #f5d690 !important; }
+@keyframes constructShake { 0%,100%{transform:rotate(0);} 25%{transform:rotate(-2deg);} 75%{transform:rotate(2deg);} }
 .town-cell.on-fire { animation: fireGlow 0.5s ease-in-out infinite alternate; }
 .town-cell.on-fire::after { content:'🔥'; position:absolute; top:-4px; right:-2px; font-size:14px; animation: fireFlicker 0.3s infinite alternate; }
 @keyframes fireGlow { from{background:#ff9060;} to{background:#ff6030;} }
@@ -1185,10 +1187,23 @@ function checkMilestones() {
       launchConfetti();
       showTownLevelBanner(level.name, level.color);
     }
-    // Detect new building unlock for pop-in animation
+    // Detect new building unlock — show construction then reveal
     if (builtCount > G.townBuiltCount) {
+      const prevCount = G.townBuiltCount;
       G.townBuiltCount = builtCount;
       G.townNewUnlockAt = Date.now();
+      // Mark newly built buildings for construction phase
+      if (!G._constructing) G._constructing = {};
+      for (let ci = prevCount; ci < builtCount; ci++) {
+        G._constructing[ci] = Date.now();
+      }
+      // Clear construction phase after 1.5s
+      setTimeout(() => {
+        for (let ci = prevCount; ci < builtCount; ci++) {
+          delete G._constructing[ci];
+        }
+        if (currentTab === 'town') renderTab();
+      }, 1500);
     }
     // Town Newspaper — headlines at population milestones
     const pop = townSlots.filter(s => G.totalEarned >= s.at).reduce((s,t) => s + t.pop, 0);
@@ -1712,8 +1727,13 @@ function renderTown() {
     if (built) {
       const isNewest = isNewUnlock && i === builtCount - 1;
       const isDisabled = G.disabledBuildings[i] && G.disabledBuildings[i] > Date.now();
+      const isConstructing = G._constructing && G._constructing[i];
       const fireClass = isDisabled ? ' on-fire' : '';
-      cells += `<div class="town-cell tappable${isNewest?' new-unlock':''}${fireClass}" onclick="tapBuilding(${i})" id="town-cell-${i}" title="${isDisabled?'🔥 Out of action!':('Tap for bonus! '+s.name+': '+(s.pop>0?'+'+s.pop+' pop':'generates income'))}">${s.emoji}<span class="cell-label">${isDisabled?'🔥 OUT':s.name}</span></div>`;
+      if (isConstructing) {
+        cells += `<div class="town-cell new-unlock" id="town-cell-${i}" style="background:#f5d690;">🏗️<span class="cell-label" style="font-size:7px;">Building...</span></div>`;
+      } else {
+        cells += `<div class="town-cell tappable${isNewest?' new-unlock':''}${fireClass}" onclick="tapBuilding(${i})" id="town-cell-${i}" title="${isDisabled?'🔥 Out of action!':('Tap for bonus! '+s.name+': '+(s.pop>0?'+'+s.pop+' pop':'generates income'))}">${s.emoji}<span class="cell-label">${isDisabled?'🔥 OUT':s.name}</span></div>`;
+      }
     } else if (distanceFromFront < 3) {
       // Show next 3 as faded previews with cost
       const pct = distanceFromFront === 0 ? 70 : distanceFromFront === 1 ? 40 : 20;
@@ -2795,7 +2815,7 @@ function doRestart() {
   G.townLevelIdx = 0; G.townBuiltCount = 0; G.townNewUnlockAt = 0; G.cityServices = {};
   G.disabledBuildings = {}; G.disasterTimer = 0; G.nextDisasterIn = 120 + Math.random() * 60;
   G.startTime = Date.now(); G.gameWon = false; G.winByBillion = false; G.gameStarted = false;
-  G._badges = []; G._pbBeaten = false; G._newspapers = []; G._passiveTiersDone = []; G._hitRank1 = false; G._survivedDisaster = false;
+  G._badges = []; G._pbBeaten = false; G._newspapers = []; G._passiveTiersDone = []; G._hitRank1 = false; G._survivedDisaster = false; G._constructing = {};
   const tray = document.getElementById('badge-tray'); if (tray) { tray.style.display='none'; tray.textContent=''; }
   G.peakRPS = 0; G.peakClickVal = 0;
   G.clickRevenue = 0; G.passiveRevenue = 0;
