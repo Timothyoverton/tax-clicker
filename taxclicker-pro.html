@@ -750,6 +750,7 @@ html, body {
       <tr><td><b>Spacebar</b></td><td>Click the big button</td></tr>
       <tr><td><b>1-8</b></td><td>Switch tabs</td></tr>
       <tr><td><b>Enter</b></td><td>Close popups</td></tr>
+      <tr><td><b>M</b></td><td>Mute / unmute sound</td></tr>
       <tr><td><b>F1</b></td><td>Open this help</td></tr>
     </table>
 
@@ -1942,6 +1943,8 @@ document.getElementById('big-click').addEventListener('click', (e) => {
   checkWin();
 });
 document.addEventListener('keydown', (e) => {
+  // M key toggles mute
+  if ((e.key === 'm' || e.key === 'M') && !e.ctrlKey && !e.altKey && !e.metaKey) { toggleMute(); return; }
   // Number keys 1-8 switch tabs
   if (G.gameStarted && !G.gameWon && e.key >= '1' && e.key <= '8' && !e.ctrlKey && !e.altKey && !e.metaKey) {
     const tabs = ['dashboard','town','upgrades','staff','clients','sales','rivals','budget'];
@@ -3324,7 +3327,7 @@ function loadSave() {
     const raw = localStorage.getItem(SAVE_KEY);
     if (!raw) return null;
     const data = JSON.parse(raw);
-    // Discard saves older than 15 min (stale completed game)
+    // Discard saves older than the game duration (stale completed game)
     if (!data) { clearSave(); return null; }
     const savedDuration = (data.G && data.G.gameDuration) || 900;
     if (Date.now() - data.savedAt > savedDuration * 1000) { clearSave(); return null; }
