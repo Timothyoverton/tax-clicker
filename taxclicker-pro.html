@@ -304,8 +304,10 @@ html, body {
   font-family: 'VT323', monospace; font-size: 28px; font-weight: 700;
   letter-spacing: 1px; border-top: 1px solid var(--cell-border);
   text-shadow: 0 0 8px rgba(100,200,255,0.6);
-  line-height: 1.1;
+  line-height: 1.1; transition: background 0.3s, text-shadow 0.3s;
 }
+#balance-display.pulse { background:#004400; text-shadow:0 0 16px rgba(100,255,100,0.8); }
+#balance-display.big-pulse { background:#444400; text-shadow:0 0 20px rgba(255,255,100,0.9); }
 #balance-display .balance-label {
   font-size: 10px; font-family: 'IBM Plex Mono', monospace; font-weight: 400;
   opacity: 0.75; letter-spacing: 2px; text-transform: uppercase; display: block;
@@ -2598,9 +2600,23 @@ function updateStatus(){
   const myPos=rank.findIndex(r=>r.name==='YOUR FIRM')+1;
   const hScore=getHappinessScore();
   const hEmoji=hScore>=80?'😊':hScore>=55?'😐':hScore>=35?'😟':'😡';
-  // Live bank balance display above Lodge button
+  // Live bank balance display above Lodge button — pulse when money changes
   const balEl=document.getElementById('balance-amount');
-  if(balEl) balEl.textContent='$'+fmt(G.money);
+  const balDisp=document.getElementById('balance-display');
+  if(balEl) {
+    const newText='$'+fmt(G.money);
+    if(balEl.textContent!==newText && G.gameStarted && !G.gameWon) {
+      balEl.textContent=newText;
+      if(balDisp) {
+        const cls = G.perSecond >= 100 ? 'big-pulse' : 'pulse';
+        balDisp.classList.add(cls);
+        clearTimeout(G._balPulseTimer);
+        G._balPulseTimer=setTimeout(()=>{ balDisp.classList.remove('pulse','big-pulse'); },300);
+      }
+    } else {
+      balEl.textContent=newText;
+    }
+  }
   document.getElementById('status-left').textContent=`Rank: #${myPos}/5`;
   document.getElementById('status-center').textContent=`${hEmoji} Town: ${hScore}% happy`;
   if (!G.gameWon) {
