@@ -828,12 +828,18 @@ html, body {
         <div style="margin-top:8px;margin-bottom:6px;font-size:12px;font-weight:700;">🏙️ TOWN NAME:</div>
         <input id="town-name-input" type="text" maxlength="20" placeholder="Name your town..."
           style="font-family:'IBM Plex Mono',monospace;font-size:13px;padding:4px 8px;border:2px inset var(--win-light);background:white;width:200px;text-align:center;">
-        <div style="margin-top:10px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
+        <div style="margin-top:8px;margin-bottom:4px;font-size:12px;font-weight:700;">⚙️ DIFFICULTY:</div>
+        <div style="display:flex;gap:6px;justify-content:center;margin-bottom:8px;" id="diff-buttons">
+          <button onclick="setDifficulty('easy')" id="diff-easy" class="diff-btn" style="background:linear-gradient(180deg,#c8f0c8,#68c868);border:2px outset var(--win-light);padding:4px 14px;cursor:pointer;font-family:'VT323',monospace;font-size:14px;font-weight:700;color:#1b5e20;">😊 EASY</button>
+          <button onclick="setDifficulty('normal')" id="diff-normal" class="diff-btn diff-selected" style="background:linear-gradient(180deg,#ffe4b5,#daa520);border:2px inset var(--win-light);padding:4px 14px;cursor:pointer;font-family:'VT323',monospace;font-size:14px;font-weight:700;color:#7a5000;">⭐ NORMAL</button>
+          <button onclick="setDifficulty('hard')" id="diff-hard" class="diff-btn" style="background:linear-gradient(180deg,#ffb0b0,#e05050);border:2px outset var(--win-light);padding:4px 14px;cursor:pointer;font-family:'VT323',monospace;font-size:14px;font-weight:700;color:#7a0000;">🔥 HARD</button>
+        </div>
+        <div id="diff-desc" style="font-size:10px;color:#666;margin-bottom:6px;text-align:center;">15 minutes, normal prices</div>
+        <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
           <button onclick="startGame()" style="background:linear-gradient(180deg,#ffe4b5,#daa520);border:2px outset var(--win-light);padding:6px 32px;cursor:pointer;font-family:'VT323',monospace;font-size:20px;font-weight:700;letter-spacing:1px;">▶ NEW GAME</button>
           <button id="continue-btn" onclick="continueGame()" style="display:none;background:linear-gradient(180deg,#c8e6ff,#4a90d9);border:2px outset var(--win-light);padding:6px 20px;cursor:pointer;font-family:'VT323',monospace;font-size:20px;font-weight:700;letter-spacing:1px;color:white;">⏩ CONTINUE</button>
         </div>
         <div id="continue-info" style="display:none;margin-top:4px;font-size:10px;color:#336699;font-weight:700;text-align:center;"></div>
-        <div style="margin-top:6px;font-size:10px;color:#666;">Goal: Earn as much profit as possible in 15 minutes!</div>
       </div>
       <div style="margin-top:10px;border-top:1px solid var(--cell-border);padding-top:10px;">
         <div style="font-weight:700;font-size:11px;margin-bottom:6px;text-align:center;">🎮 HOW TO PLAY</div>
@@ -897,6 +903,7 @@ const G = {
   // Win tracking
   startTime: Date.now(), gameWon: false, winByBillion: false,
   gameStarted: false, playerName: 'Anonymous', townName: 'My Town',
+  difficulty: 'normal', gameDuration: 900, costMultDiff: 1,
   peakRPS: 0, peakClickVal: 0,
   clickRevenue: 0, passiveRevenue: 0,
   clickTimes: [],
@@ -931,7 +938,7 @@ function _bgTick() {
   const ctx = getAudioCtx(); if (!ctx) { _bgTimer = setTimeout(_bgTick, 500); return; }
   const [freq, baseDur] = _bgMelody[_bgIdx % _bgMelody.length]; _bgIdx++;
   // Speed up music as time runs out: normal → 1.5x faster → 2x faster
-  const timeLeft = G.gameStarted ? Math.max(0, 900 - (Date.now() - G.startTime) / 1000) : 900;
+  const timeLeft = G.gameStarted ? Math.max(0, (G.gameDuration||900) - (Date.now() - G.startTime) / 1000) : (G.gameDuration||900);
   const speed = timeLeft < 30 ? 2.0 : timeLeft < 60 ? 1.5 : 1.0;
   const dur = baseDur / speed;
   const osc = ctx.createOscillator(), gain = ctx.createGain();
@@ -1031,7 +1038,7 @@ const upgrades = [
 ];
 
 function getCost(u) {
-  return Math.floor(u.baseCost * Math.pow(u.costMult, u.owned) * G.crisisCostMult);
+  return Math.floor(u.baseCost * Math.pow(u.costMult, u.owned) * G.crisisCostMult * (G.costMultDiff || 1));
 }
 
 function getDeskCapacity() {
@@ -1397,8 +1404,8 @@ function renderDashboard() {
   let townLevelInfo = townLevels[0];
   townLevels.forEach(l => { if (builtCount >= l.minBuilt) townLevelInfo = l; });
   const elapsed = (Date.now() - G.startTime) / 1000;
-  const timeLeft = Math.max(0, 900 - elapsed);
-  const timePct = Math.round((timeLeft / 900) * 100);
+  const timeLeft = Math.max(0, (G.gameDuration||900) - elapsed);
+  const timePct = Math.round((timeLeft / (G.gameDuration||900)) * 100);
 
   const goalPanel = `<div style="padding:8px 10px;background:white;border-bottom:2px solid var(--cell-border);">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
@@ -2516,7 +2523,7 @@ function updateStatus(){
   document.getElementById('status-center').textContent=`${hEmoji} Town: ${hScore}% happy`;
   if (!G.gameWon) {
     const elapsed=(Date.now()-G.startTime)/1000;
-    const timeLeft=Math.max(0,900-elapsed);
+    const timeLeft=Math.max(0,(G.gameDuration||900)-elapsed);
     const mins=Math.floor(timeLeft/60);
     const secs=Math.floor(timeLeft%60);
     const urgent=timeLeft<60?'⚠️':'⏱️';
@@ -2607,7 +2614,7 @@ function updateStatus(){
   const finalCd = document.getElementById('final-countdown');
   if (finalBanner && G.gameStarted && !G.gameWon) {
     const elapsed2 = (Date.now() - G.startTime) / 1000;
-    const tLeft = Math.max(0, 900 - elapsed2);
+    const tLeft = Math.max(0, (G.gameDuration||900) - elapsed2);
     if (tLeft <= 60 && tLeft > 0) {
       finalBanner.style.display = 'block';
       if (finalCd) finalCd.textContent = Math.floor(tLeft) + 's';
@@ -2897,7 +2904,7 @@ function checkWin() {
     G.winByBillion = true;
     clearSave();
     showWinScreen();
-  } else if ((Date.now() - G.startTime) / 1000 >= 900) {
+  } else if ((Date.now() - G.startTime) / 1000 >= (G.gameDuration||900)) {
     G.gameWon = true;
     G.winByBillion = false;
     clearSave();
@@ -2962,7 +2969,8 @@ function showWinScreen() {
   const hasBrad = upgrades.find(u => u.id === 'brad')?.owned > 0;
 
   const trophy = G.winByBillion ? '🏆🎉🏆' : '⏰🎯⏰';
-  const headline = G.winByBillion ? 'YOUR FIRM HIT $1 BILLION REVENUE!' : "TIME'S UP! 15 MINUTES DONE!";
+  const gameMins = Math.round((G.gameDuration||900)/60);
+  const headline = G.winByBillion ? 'YOUR FIRM HIT $1 BILLION REVENUE!' : "TIME'S UP! " + gameMins + " MINUTES DONE!";
   const subline = G.winByBillion ? 'Time to $1B — challenge your mates to beat it!' : 'Your score = total profit earned. Can you do better?';
 
   document.getElementById('win-body-content').innerHTML =  // all values are internal game state (numbers/booleans), no user text input — not an XSS risk
@@ -3201,7 +3209,7 @@ function loadSave() {
     if (!data || Date.now() - data.savedAt > 900000) { clearSave(); return null; }
     // Discard if the saved game had already run out of time
     const elapsed = (data.savedAt - data.G.startTime) / 1000;
-    if (elapsed >= 900) { clearSave(); return null; }
+    if (elapsed >= (G.gameDuration||900)) { clearSave(); return null; }
     return data;
   } catch(e) { return null; }
 }
@@ -3240,7 +3248,7 @@ function showScoreboard(msg) {
   const contInfo = document.getElementById('continue-info');
   if (save && contBtn) {
     const elapsed = Math.floor((save.savedAt - save.G.startTime) / 1000);
-    const minsLeft = Math.ceil((900 - elapsed) / 60);
+    const minsLeft = Math.ceil(((G.gameDuration||900) - elapsed) / 60);
     contBtn.style.display = 'inline-block';
     if (contInfo) { contInfo.textContent = '💾 Saved game: $' + fmt(save.G.totalEarned) + ' earned, ~' + minsLeft + ' min left'; contInfo.style.display = 'block'; }
   } else if (contBtn) {
@@ -3248,6 +3256,18 @@ function showScoreboard(msg) {
     if (contInfo) contInfo.style.display = 'none';
   }
   document.getElementById('scoreboard-screen').style.display = 'flex';
+}
+function setDifficulty(diff) {
+  G.difficulty = diff;
+  const descs = { easy: '20 minutes, cheaper prices — relax!', normal: '15 minutes, normal prices', hard: '10 minutes, expensive prices — good luck!' };
+  const durations = { easy: 1200, normal: 900, hard: 600 };
+  const costMults = { easy: 0.6, normal: 1, hard: 1.8 };
+  G.gameDuration = durations[diff];
+  G.costMultDiff = costMults[diff];
+  document.getElementById('diff-desc').textContent = descs[diff];
+  document.querySelectorAll('.diff-btn').forEach(b => { b.style.borderStyle = 'outset'; });
+  const sel = document.getElementById('diff-' + diff);
+  if (sel) sel.style.borderStyle = 'inset';
 }
 function startGame() {
   const inp = document.getElementById('player-name-input');
