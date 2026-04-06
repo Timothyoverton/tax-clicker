@@ -2698,21 +2698,21 @@ function updateStatus(){
   }
 }
 const formulaQuips=[
-  '=SUM(BAS!A1:A\u221E) + FLAT_WHITE()',
-  '=IF(Sleep>0, "You\'re doing it wrong", LODGE_RETURNS())',
-  '=VLOOKUP("happiness", Career, 2, FALSE) \u2192 #N/A',
-  '=ROUND(GST_Credits, -6)',
-  '=CONCATENATE("EOFY"," ","Never"," ","Ends")',
-  '=NPV(0.08, Tears, Long_Blacks, PAYG_Withholding)',
-  '=INDEX(Life, MATCH("Weekend", ATO_Deadlines, 0)) \u2192 #REF!',
-  '=SUMPRODUCT(Invoices, Franking_Credits)',
-  '=PMT(Ambition, \u221E, -Superannuation)',
-  '=IFERROR(VLOOKUP("Tax Refund",MyOB,2,0),"See Accountant")',
-  '=ABS(GST_Collected) - ABS(GST_Paid) + DESPAIR()',
-  '=IF(Sean_Wellington="Hired", "Victory", "Keep Trying")',
-  '=RANK(YourFirm, AllFirms, 0) & " \u2014 Outpace PwC!"',
-  '=IF(Brad_Harper="Recruited", REVENUE()*10, "Hire Brad!")',
-  '=FORECAST(Revenue, Brad_Pipeline, Quarters) \u2192 \u221E',
+  '=SUM(All_My_Money) 💰',
+  '=IF(Clicking, "EARNING!", "Click more!")',
+  '=COUNT(Buildings) + COUNT(Happy_People)',
+  '=ROUND(Taxes, 2) = Happy Town!',
+  '=MAX(Fun, Fun, Fun, Fun)',
+  '=SUM(Clicks) + SUM(Upgrades) = WIN!',
+  '=IF(Town="Happy", "YAY!", "Set tax rate!")',
+  '=RANK(MyFirm, 1) \u2014 You\'re the best!',
+  '=IF(Staff>10, "BIG TEAM!", "Hire more!")',
+  '=CONCATENATE("TAX"," ","CLICKER"," ","PRO!")',
+  '=SUM(Parks, Schools, Roads) = Great Town!',
+  '=IF(Money>1000000, "WOW!", "Keep going!")',
+  '=COUNT(Badges) & " badges earned!"',
+  '=FORECAST(Revenue) \u2192 $1 BILLION! 🚀',
+  '=IF(Max="Hired", "LEGEND!", "Save up!")',
 ];
 function cycleFormula(){document.getElementById('formula-bar').textContent=formulaQuips[Math.floor(Math.random()*formulaQuips.length)];}
 setInterval(cycleFormula,5000);
