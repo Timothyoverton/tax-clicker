@@ -3163,6 +3163,30 @@ function startGame() {
   G._pbBeaten = false;
   document.getElementById('scoreboard-screen').style.display = 'none';
   startBgMusic();
+  // Random starting bonus — surprise perk each game!
+  const bonuses = [
+    { icon:'💰', name:'Lucky Penny!', msg:'Start with $500!', apply:()=>{ G.money+=500; G.totalEarned+=500; }},
+    { icon:'⚡', name:'Fast Fingers!', msg:'Double clicks for 60s!', apply:()=>{
+      G.clickValue*=2; setTimeout(()=>{ G.clickValue=Math.max(1,G.clickValue/2); recalc(); },60000);
+    }},
+    { icon:'👥', name:'Welcome Wagon!', msg:'Start with 2x tax rate bonus for 45s!', apply:()=>{
+      G.townEventMult=2; setTimeout(()=>{ if(G.townEventMult===2) G.townEventMult=1; },45000);
+    }},
+    { icon:'🎯', name:'Sharp Eye!', msg:'+$5 per click for 90s!', apply:()=>{
+      G.clickValue+=5; setTimeout(()=>{ G.clickValue=Math.max(1,G.clickValue-5); recalc(); },90000);
+    }},
+    { icon:'🌟', name:'Star Power!', msg:'3x earnings for 30s!', apply:()=>{
+      G.taxRushActive=true; G.taxRushMultiplier=3;
+      setTimeout(()=>{ G.taxRushActive=false; G.taxRushMultiplier=1; },30000);
+    }},
+    { icon:'🏗️', name:'Head Start!', msg:'Start with $200!', apply:()=>{ G.money+=200; G.totalEarned+=200; }},
+  ];
+  const bonus = bonuses[Math.floor(Math.random() * bonuses.length)];
+  bonus.apply();
+  recalc(); renderTab(); updateStatus();
+  setTimeout(()=>{
+    queueNotif(bonus.icon + ' LUCKY START: ' + bonus.name, bonus.msg);
+  }, 800);
 }
 
 // ══════════════════════════════════════════════
