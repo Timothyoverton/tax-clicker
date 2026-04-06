@@ -642,7 +642,7 @@ html, body {
     <p>Rivals grow faster as your firm grows. During <b>economic crises</b>, rival growth slows — use these windows to overtake them!</p>
 
     <h2>⚠️ ECONOMIC EVENTS</h2>
-    <p>Random events strike every 50–90 seconds. They appear as a <b>popup alert</b> and a <b>coloured banner</b> at the top of the screen.</p>
+    <p>Random events happen sometimes. Watch for banners at the top!</p>
     <table>
       <tr><th>Event</th><th>Effect</th><th>Duration</th></tr>
       <tr><td>📉 GFC 2.0</td><td>Costs 3x</td><td>45 sec</td></tr>
@@ -831,8 +831,8 @@ const G = {
   crisisActive: false, crisisCostMult: 1, crisisName: '',
   quarter: 1, year: 2026, quarterTime: 0,
   milestones: [], lastTick: Date.now(),
-  eventTimer: 0, nextEventIn: 45 + Math.random() * 30,
-  townEventMult: 1, townEventTimer: 0, townNextEventIn: 90 + Math.random() * 60,
+  eventTimer: 0, nextEventIn: 90 + Math.random() * 60,
+  townEventMult: 1, townEventTimer: 0, townNextEventIn: 150 + Math.random() * 90,
   townLevelIdx: 0, townBuiltCount: 0, townNewUnlockAt: 0,
   cityServices: {},
   notifQueue: [],
@@ -983,7 +983,7 @@ function buyUpgrade(id) {
   if (u.category === 'staff') {
     const { available } = getDeskCapacity();
     if (available <= 0) {
-      queueNotif('🪑 Need More Desks!', 'There\'s no desk for this person to sit at!<br><br>Go to the <b>Upgrades</b> tab and buy more <b>Extra Desks</b> first.<br><br><i>Each desk supports one staff member.</i>');
+      queueNotif('🪑 Need More Desks!', 'Buy more desks first!<br>Check the <b>Upgrades</b> tab.');
       return;
     }
   }
@@ -993,12 +993,12 @@ function buyUpgrade(id) {
     playSound('buy');
     recalc(); G._lastRender = Date.now(); renderTab(); renderOffice(); checkMilestones();
     if (u.isSean && u.owned === 1) {
-      queueNotif('🐐 MAX WELLINGTON HAS ENTERED THE BUILDING',
-        '\u2B50\u2B50\u2B50 LEGENDARY HIRE \u2B50\u2B50\u2B50<br><br>Max Wellington has joined your firm!<br><br>+$500/sec passive income<br>+$200 per click<br>Rival growth reduced by 50%!<br><br><i>"G\'day. Point me at those BAS lodgements."</i><br><br>The Big Four are trembling. PwC just called an emergency board meeting.');
+      queueNotif('🐐 MAX WELLINGTON HIRED!',
+        '⭐ Legendary hire! ⭐<br><br>+$500/sec and +$200/click<br>Rivals slowed by 50%!');
     }
     if (u.isBrad && u.owned === 1) {
-      queueNotif('🦈 JAKE HARPER HAS ENTERED THE BUILDING',
-        '📈📈📈 LEGENDARY HIRE 📈📈📈<br><br>Jake Harper, Chief Revenue Officer, has joined your firm!<br><br>🦈 <b>SALES MULTIPLIER MASSIVE BOOST!</b><br>All revenue is now multiplied by Brad\'s sales power!<br><br><i>"G\'day legends. Let\'s absolutely smash this quarter. I\'ve already got three warm leads and a Pty Ltd begging to sign."</i><br><br>Your phone is ringing off the hook. LinkedIn is on fire.');
+      queueNotif('🦈 JAKE HARPER HIRED!',
+        '📈 Legendary hire! 📈<br><br>🦈 <b>Huge sales boost!</b><br>All money goes way up!');
     }
   }
 }
@@ -1023,25 +1023,25 @@ function recalc() {
 const crisisEvents = [
   { name: 'GFC 2.0', banner: '📉 GLOBAL FINANCIAL CRISIS 2.0! Upgrade costs 3x for 45 seconds!',
     costMult: 3, earnMult: 1, duration: 45, cls: 'crisis',
-    popup: '📉 BREAKING: GFC 2.0 📉<br><br>Lehman Brothers has risen from the grave just to collapse again.<br>Markets are in freefall!<br><br>All upgrade costs <b>TRIPLED</b> for 45 seconds!<br><br>Accountants everywhere are stress-eating Tim Tams.' },
+    popup: '📉 Oh no! Markets crashed!<br><br>Costs <b>3x</b> for 45 seconds!' },
   { name: 'Hyperinflation', banner: '💸 HYPERINFLATION! Upgrade costs 5x for 40 seconds!',
     costMult: 5, earnMult: 1, duration: 40, cls: 'crisis',
-    popup: '💸 BREAKING: HYPERINFLATION 💸<br><br>The Reserve Bank has lost control!<br>A flat white now costs $47.<br><br>All upgrade costs <b>5x</b> for 40 seconds!<br><br>BAS lodgement fees are through the roof.' },
+    popup: '💸 Everything costs more!<br><br>Costs <b>5x</b> for 40 seconds!' },
   { name: 'ATO Audit Blitz', banner: '🔍 ATO AUDIT BLITZ! Upgrade costs 2x for 50 seconds!',
     costMult: 2, earnMult: 1, duration: 50, cls: 'crisis',
-    popup: '🔍 ATO AUDIT BLITZ 🔍<br><br>The Australian Tax Office has launched a nationwide audit campaign!<br><br>All upgrade costs <b>DOUBLED</b> for 50 seconds!<br><br>Every accountant in the country is working overtime.' },
+    popup: '🔍 Tax inspectors are here!<br><br>Costs <b>2x</b> for 50 seconds!' },
   { name: 'Mining Boom', banner: '\u26CF\uFE0F MINING BOOM! All earnings 4x for 35 seconds!',
     costMult: 1, earnMult: 4, duration: 35, cls: 'boom',
-    popup: '\u26CF\uFE0F MINING BOOM! \u26CF\uFE0F<br><br>Iron ore just hit $400/tonne!<br>Mining companies are throwing money at anyone with a calculator.<br><br>All earnings <b>4x</b> for 35 seconds!' },
+    popup: '⛏️ Gold rush! Lots of money!<br><br>Earnings <b>4x</b> for 35 seconds!' },
   { name: 'Property Bubble Pop', banner: '🏠 PROPERTY BUBBLE POP! Upgrade costs 4x for 35 seconds!',
     costMult: 4, earnMult: 1, duration: 35, cls: 'crisis',
-    popup: '🏠 PROPERTY BUBBLE POP 🏠<br><br>Sydney median house price just hit $5 million...<br>then crashed 40% overnight.<br><br>All upgrade costs <b>4x</b> for 35 seconds!<br><br>Negative gearing claims are flooding in.' },
+    popup: '🏠 House prices crashed!<br><br>Costs <b>4x</b> for 35 seconds!' },
   { name: 'Crypto Crash', banner: '₿ CRYPTO CRASH! Costs 3x but Revenue 2x for 40 seconds!',
     costMult: 3, earnMult: 2, duration: 40, cls: 'crisis',
-    popup: '₿ CRYPTO CRASH ₿<br><br>Bitcoin just went to zero. Again.<br>Every crypto bro in Australia needs a tax accountant for loss write-offs.<br><br>Costs <b>3x</b> but earnings <b>2x</b> for 40 seconds!' },
+    popup: '₿ Crypto went to zero!<br><br>Costs <b>3x</b> but earnings <b>2x</b>!' },
   { name: 'Government Stimulus', banner: '🏛️ GOVERNMENT STIMULUS! All earnings 3x for 40 seconds!',
     costMult: 1, earnMult: 3, duration: 40, cls: 'boom',
-    popup: '🏛️ STIMULUS PACKAGE! 🏛️<br><br>Canberra is handing out grants like lollies at a school fete!<br><br>All earnings <b>3x</b> for 40 seconds!' },
+    popup: '🏛️ Free money from the government!<br><br>Earnings <b>3x</b> for 40 seconds!' },
 ];
 
 function triggerCrisis() {
@@ -1076,7 +1076,7 @@ function triggerTaxRush() {
   bar.textContent = '\u26A1 EOFY RUSH! All earnings 3x for 30 seconds! \u26A1';
   bar.className = 'eofy';
   bar.style.display = 'block';
-  queueNotif('\u26A1 EOFY RUSH!', 'End of Financial Year panic has set in!<br><br>Every business in Australia is scrambling to lodge.<br>All earnings <b>3x</b> for 30 seconds!');
+  queueNotif('\u26A1 EOFY RUSH!', 'End of year rush!<br>Earnings <b>3x</b> for 30 seconds!');
   setTimeout(() => {
     G.taxRushActive = false; G.taxRushMultiplier = 1;
     document.getElementById('event-bar').style.display = 'none';
@@ -1087,26 +1087,26 @@ function triggerTaxRush() {
 //  MILESTONES
 // ══════════════════════════════════════════════
 const milestoneList = [
-  { id: 'm1', at: 100, title: 'First BAS Lodged', msg: 'You lodged your first Business Activity Statement!<br>The ATO acknowledges your existence.' },
-  { id: 'm2', at: 1000, title: 'Registered Pty Ltd!', msg: 'You\'ve officially registered with ASIC.<br>The ATO knows your ABN now.' },
-  { id: 'm3', at: 10000, title: 'Corner Office', msg: 'You\'ve moved out of the garage!<br>Real walls. Real fluorescent lighting.' },
-  { id: 'm4', at: 100000, title: 'Big Four Adjacent', msg: 'PwC Australia called. They hung up, but still.<br>You\'re on their radar.' },
-  { id: 'm5', at: 500000, title: '🐐 Max Wellington Available!', msg: '🐐 LEGENDARY ACCOUNTANT UNLOCKED! 🐐<br><br>Word of your firm has reached the legendary Max Wellington.<br>He\'s willing to join... for <b>$1,000,000</b>.<br><br>Check the Staff tab!' },
-  { id: 'm5b', at: 250000, title: '🦈 Jake Harper Available!', msg: '🦈 LEGENDARY SALES LEADER UNLOCKED! 🦈<br><br>Jake Harper, Chief Revenue Officer, has heard about your firm.<br>He\'s willing to lead your sales team... for <b>$750,000</b>.<br><br>Check the Sales tab!' },
-  { id: 'm6', at: 1000000, title: 'Accounting Empire', msg: '🎉 ONE MILLION DOLLARYDOOS! 🎉<br>Your firm is now a national powerhouse.<br>H&R Block Australia is sweating.' },
-  { id: 'm7', at: 10000000, title: 'ASX IPO Ready', msg: 'Your firm is listing on the ASX!<br>Analysts from Martin Place are baffled but impressed.' },
-  { id: 'm8', at: 100000000, title: 'Global Expansion', msg: 'Your firm has opened offices in London, New York and Singapore!<br>The Big Four are now the Big Five.' },
-  { id: 'm9', at: 500000000, title: 'Half a Billion!', msg: '$500 MILLION!<br>You can almost taste the billion.<br>Keep pushing — the finish line is in sight!' },
+  { id: 'm1', at: 100, title: 'First Tax Filed!', msg: 'You filed your first tax! 📋<br>Good job!' },
+  { id: 'm2', at: 1000, title: 'Real Business!', msg: 'Your firm is official now! 🏢' },
+  { id: 'm3', at: 10000, title: 'Corner Office!', msg: 'You got a real office! 🪟<br>No more garage!' },
+  { id: 'm4', at: 100000, title: 'Getting Famous!', msg: 'Big companies notice you! 👀' },
+  { id: 'm5', at: 500000, title: '🐐 Max Wellington Available!', msg: '🐐 Legendary hire unlocked!<br>Check the Staff tab!' },
+  { id: 'm5b', at: 250000, title: '🦈 Jake Harper Available!', msg: '🦈 New sales leader unlocked!<br>Check the Sales tab!' },
+  { id: 'm6', at: 1000000, title: 'Accounting Empire', msg: '🎉 ONE MILLION DOLLARS! 🎉<br>You are super rich!' },
+  { id: 'm7', at: 10000000, title: 'ASX IPO Ready', msg: 'Your firm is famous now!<br>Everyone knows your name!' },
+  { id: 'm8', at: 100000000, title: 'Global Expansion', msg: 'Offices all over the world!<br>You are a MEGA boss!' },
+  { id: 'm9', at: 500000000, title: 'Half a Billion!', msg: '$500 MILLION! So close!<br>Keep going! 🚀' },
 ];
 
 const townLevelUpMsgs = [
   null, // index 0 = "Empty Land", no popup
-  { title: '🏘️ You built a Tiny Village!', msg: 'Your first building is up!<br>A few families have moved in.<br><br>🌱 Keep earning to unlock more buildings!' },
-  { title: '🏡 Welcome to the Village!', msg: 'Your town is growing!<br>People love living here.<br><br>🌳 Build more to make it even better!' },
-  { title: '🏙️ Small Town achieved!', msg: 'Your town is getting busy!<br>Shops are opening and kids are going to school.<br><br>📈 Keep collecting taxes to grow more!' },
-  { title: '🌆 You built a real Town!', msg: 'Wow — your town is thriving!<br>Lots of people live, work and play here.<br><br>🏗️ Keep building towards a City!' },
-  { title: '🌇 CITY STATUS REACHED! 🎉', msg: '🎉🎉🎉 AMAZING! 🎉🎉🎉<br><br>You built a whole City!<br>Thousands of people call your town home.<br><br>⭐ Can you reach Metropolis?!' },
-  { title: '🌃 METROPOLIS! YOU WIN! 🏆', msg: '🏆🏆🏆 INCREDIBLE! 🏆🏆🏆<br><br>You built a METROPOLIS!<br>You are the greatest mayor ever!<br><br>🌟 Your town is now one of the biggest cities in the world!' },
+  { title: '🏘️ Tiny Village!', msg: 'Your first building! 🌱<br>Keep earning for more!' },
+  { title: '🏡 Village!', msg: 'Town is growing! 🌳<br>People love it here!' },
+  { title: '🏙️ Small Town!', msg: 'Shops and schools! 📈<br>Keep collecting taxes!' },
+  { title: '🌆 Real Town!', msg: 'Wow, so many people! 🏗️<br>Next stop: City!' },
+  { title: '🌇 CITY! 🎉', msg: '🎉 You built a City!<br>⭐ Can you get Metropolis?!' },
+  { title: '🌃 METROPOLIS! 🏆', msg: '🏆 The biggest town ever!<br>You are the best mayor! 🌟' },
 ];
 
 function checkMilestones() {
@@ -1138,10 +1138,10 @@ function checkMilestones() {
     const pop = townSlots.filter(s => G.totalEarned >= s.at).reduce((s,t) => s + t.pop, 0);
     if (!G._newspapers) G._newspapers = [];
     const papers = [
-      { minPop: 8,  id:'pop8',   headline: 'LOCAL MAYOR OPENS FIRST PARK!',      body: '📰 <i>The Daily Gazette</i> — Population: ' + pop + '<br><br>Residents of the new village are excited about their future. Mayor <b>' + (G.playerName||'Anonymous') + '</b> promises more parks and lower taxes.<br><br><i>"It\'s a great time to be alive!" — Local Resident</i>' },
-      { minPop: 20, id:'pop20',  headline: 'TOWN BOOMING — 20 CITIZENS!',         body: '📰 <i>The Daily Gazette</i> — Population: ' + pop + '<br><br>Businesses are opening and families are moving in! The tax office reports record collection this quarter.<br><br>💡 <b>Did you know?</b> Taxes pay for roads, schools and hospitals!' },
-      { minPop: 40, id:'pop40',  headline: 'CITY GROWS — NEW SCHOOL OPENS!',      body: '📰 <i>The Daily Gazette</i> — Population: ' + pop + '<br><br>Citizens celebrate as their hard-working mayor keeps building.<br><br>💡 <b>Fun fact:</b> In real life, your parents pay taxes too — and that\'s how schools get built!' },
-      { minPop: 64, id:'pop64',  headline: 'METROPOLIS DREAM WITHIN REACH!',      body: '📰 <i>The Daily Gazette</i> — Population: ' + pop + '<br><br>Analysts say Mayor <b>' + (G.playerName||'Anonymous') + '</b> is on track for a full Metropolis.<br><br>🌟 Keep the tax rate fair and citizens will keep coming!' },
+      { minPop: 8,  id:'pop8',   headline: 'FIRST PARK OPENS!',      body: '📰 Population: ' + pop + '<br>Your town is growing! 🌱' },
+      { minPop: 20, id:'pop20',  headline: '20 PEOPLE IN TOWN!',      body: '📰 Population: ' + pop + '<br>💡 Taxes pay for roads and schools!' },
+      { minPop: 40, id:'pop40',  headline: 'NEW SCHOOL OPENS!',       body: '📰 Population: ' + pop + '<br>💡 Taxes build schools!' },
+      { minPop: 64, id:'pop64',  headline: 'METROPOLIS SOON!',        body: '📰 Population: ' + pop + '<br>🌟 Keep taxes fair!' },
     ];
     papers.forEach(p => {
       if (pop >= p.minPop && !G._newspapers.includes(p.id)) {
@@ -1158,7 +1158,7 @@ function checkMilestones() {
         G._hitRank1 = true;
         playSound('levelup');
         launchConfetti();
-        queueNotif('🥇 YOU\'RE #1 IN AUSTRALIA!', '🎉🎉🎉<br><br>Your firm just overtook <b>' + (rank[1]?.name || 'the competition') + '</b>!<br><br>You are now the <b>#1 accounting firm</b> in the country!<br><br>🏆 PwC, Deloitte, KPMG and EY are all behind you now!');
+        queueNotif('🥇 YOU\'RE #1!', '🎉 You beat everyone! 🎉<br>You are the <b>best firm</b>! 🏆');
       }
     }
     // Personal best celebration
@@ -1166,17 +1166,17 @@ function checkMilestones() {
       G._pbBeaten = true;
       playSound('levelup');
       launchConfetti();
-      queueNotif('🏆 NEW PERSONAL BEST!', '🎉🎉🎉<br><br>You just beat your own record!<br><br>Previous best: <b>$' + fmt(G._personalBest) + '</b><br>Current score: <b>$' + fmt(G.totalEarned) + '</b><br><br>🌟 Keep going — can you go even higher?!');
+      queueNotif('🏆 NEW PERSONAL BEST!', '🎉 You beat your record!<br>Old: <b>$' + fmt(G._personalBest) + '</b> → Now: <b>$' + fmt(G.totalEarned) + '</b>');
     }
   }
 }
 
 const _passiveTiers = [
-  { val:1,    msg:'⚙️ You\'re earning <b>$1 per second</b> automatically!<br><br>Your team is working while you click — that\'s passive income!<br>Keep buying upgrades to earn even more!' },
-  { val:10,   msg:'⚙️ <b>$10 per second</b> — now we\'re talking!<br><br>Your firm runs itself even when you\'re not clicking.<br>Imagine making $10 every second in real life! 🤑' },
-  { val:50,   msg:'🚀 <b>$50 per second!</b><br><br>Your accounting empire is humming along!<br>That\'s $3,000 every minute just sitting there!' },
-  { val:250,  msg:'💥 <b>$250 per second!</b><br><br>You\'re a passive income machine!<br>Most businesses dream of earning this fast. 🌟' },
-  { val:1000, msg:'🏆 <b>$1,000 per second!</b><br><br>ONE THOUSAND DOLLARS EVERY SECOND!<br>You\'ve built an absolute financial powerhouse! 🚀🚀🚀' },
+  { val:1,    msg:'⚙️ Earning <b>$1/sec</b> auto!<br>Money while you rest!' },
+  { val:10,   msg:'⚙️ <b>$10/sec!</b> Nice! 🤑<br>Keep buying upgrades!' },
+  { val:50,   msg:'🚀 <b>$50/sec!</b> So fast!<br>Money machine!' },
+  { val:250,  msg:'💥 <b>$250/sec!</b> WOW!<br>Super speed! 🌟' },
+  { val:1000, msg:'🏆 <b>$1,000/sec!</b><br>UNSTOPPABLE! 🚀🚀🚀' },
 ];
 function checkPassiveMilestones() {
   if (!G.gameStarted || G.gameWon) return;
@@ -1232,7 +1232,7 @@ function checkAchievements() {
     // Only show popup for ALL badges completed (the final achievement)
     if (G._badges.length === achievementDefs.length) {
       playSound('win');
-      queueNotif('🏅 ALL BADGES COLLECTED!', '🌟🌟🌟<br><br>You earned every single badge!<br><br>' + achievementDefs.map(d=>d.emoji).join(' ') + '<br><br>You are a TaxClicker Pro™ legend!');
+      queueNotif('🏅 ALL BADGES!', '🌟 You got them all! 🌟<br>' + achievementDefs.map(d=>d.emoji).join(' '));
     } else {
       playSound('buy');
     }
@@ -1435,28 +1435,28 @@ function renderRivals() {
 // ══════════════════════════════════════════════
 const townEvents = [
   { icon: '🎪', name: 'Town Festival!',
-    popup: '🎪 TOWN FESTIVAL! 🎪<br><br>Everyone is out celebrating!<br><br>Town tax income <b>3x for 30 seconds!</b><br><br><i>"Best town ever!" — Local resident</i>',
+    popup: '🎪 Party time!<br>Town income <b>3x for 30s!</b>',
     mult: 3, duration: 30 },
-  { icon: '☀️', name: 'Sunny Long Weekend!',
-    popup: '☀️ PERFECT SUNNY WEEKEND! ☀️<br><br>Everyone is visiting the parks and shops!<br><br>Town income <b>2x for 25 seconds!</b>',
+  { icon: '☀️', name: 'Sunny Weekend!',
+    popup: '☀️ Beautiful sunny day!<br>Town income <b>2x for 25s!</b>',
     mult: 2, duration: 25 },
-  { icon: '🔬', name: 'School Science Fair!',
-    popup: '🔬 SCHOOL SCIENCE FAIR WIN! 🔬<br><br>Your town\'s school won first place!<br>Citizens are SO proud!<br><br>Town income <b>2x for 20 seconds!</b>',
+  { icon: '🔬', name: 'Science Fair Win!',
+    popup: '🔬 School won first place!<br>Town income <b>2x for 20s!</b>',
     mult: 2, duration: 20 },
   { icon: '🌧️', name: 'Heavy Rain!',
-    popup: '🌧️ HEAVY RAIN ALERT 🌧️<br><br>Shops are quiet and people are staying home.<br><br>Town income <b>-60% for 20 seconds.</b><br><br><i>Maybe build a covered market next time!</i>',
+    popup: '🌧️ Rainy day, shops quiet.<br>Town income <b>-60% for 20s.</b>',
     mult: 0.4, duration: 20 },
   { icon: '🚧', name: 'Road Repairs!',
-    popup: '🚧 ROAD REPAIRS ON MAIN STREET 🚧<br><br>Fixing the roads makes the town better!<br>But it\'s a bit disruptive right now...<br><br>Town income <b>-30% for 15 seconds.</b>',
+    popup: '🚧 Fixing the roads!<br>Town income <b>-30% for 15s.</b>',
     mult: 0.7, duration: 15 },
-  { icon: '🏠', name: 'New Families Moving In!',
-    popup: '🏠 NEW FAMILIES MOVING IN! 🏠<br><br>Word is spreading — your town is awesome!<br>Three new families just arrived!<br><br>Town income <b>1.5x for 25 seconds!</b>',
+  { icon: '🏠', name: 'New Families!',
+    popup: '🏠 New families moved in!<br>Town income <b>1.5x for 25s!</b>',
     mult: 1.5, duration: 25 },
-  { icon: '🎡', name: 'Fair Comes to Town!',
-    popup: '🎡 THE TRAVELLING FAIR IS HERE! 🎡<br><br>Rides, games, and fairy floss!<br>Everyone loves it!<br><br>Town income <b>2.5x for 20 seconds!</b>',
+  { icon: '🎡', name: 'Fair in Town!',
+    popup: '🎡 Rides and games! Fun!<br>Town income <b>2.5x for 20s!</b>',
     mult: 2.5, duration: 20 },
   { icon: '⛈️', name: 'Thunderstorm!',
-    popup: '⛈️ THUNDERSTORM WARNING ⛈️<br><br>A big storm rolled through overnight.<br>Some minor damage, but everyone is safe.<br><br>Town income <b>-50% for 15 seconds.</b>',
+    popup: '⛈️ Big storm! Stay safe!<br>Town income <b>-50% for 15s.</b>',
     mult: 0.5, duration: 15 },
 ];
 function triggerTownEvent() {
@@ -1539,7 +1539,7 @@ function buyCityService(id) {
   playSound('buy');
   G._lastRender = Date.now(); renderTab();
   queueNotif(`${svc.emoji} ${svc.name} Built!`,
-    `${svc.desc}<br><br>Town income <b>+${Math.round(svc.incomeMult*100)}%</b> and happiness <b>+${svc.happBonus}</b>!<br><br><i>Your citizens are cheering! 🎉</i>`);
+    `${svc.desc}<br>Income <b>+${Math.round(svc.incomeMult*100)}%</b>, happiness <b>+${svc.happBonus}</b>! 🎉`);
 }
 
 function getCityServiceBonuses() {
@@ -2256,7 +2256,7 @@ function tick(){
     if(townBuilt>=2){
       G.townEventTimer+=dt;
       if(G.townEventTimer>=G.townNextEventIn){
-        G.townEventTimer=0;G.townNextEventIn=90+Math.random()*60;
+        G.townEventTimer=0;G.townNextEventIn=150+Math.random()*90;
         triggerTownEvent();
       }
     }
@@ -2279,7 +2279,7 @@ function tick(){
     G.eventTimer+=dt;
     if(G.eventTimer>=G.nextEventIn&&G.totalEarned>200){
       G.eventTimer=0;
-      G.nextEventIn=50+Math.random()*40;
+      G.nextEventIn=90+Math.random()*60;
       triggerCrisis();
     }
 
@@ -2386,10 +2386,10 @@ function doRestart() {
   G.taxRushActive = false; G.taxRushMultiplier = 1;
   G.crisisActive = false; G.crisisCostMult = 1; G.crisisName = '';
   G.quarter = 1; G.year = 2026; G.quarterTime = 0;
-  G.milestones = []; G.eventTimer = 0; G.nextEventIn = 45 + Math.random() * 30;
+  G.milestones = []; G.eventTimer = 0; G.nextEventIn = 90 + Math.random() * 60;
   G.notifQueue = [];
   G.taxRate = 15;
-  G.townEventMult = 1; G.townEventTimer = 0; G.townNextEventIn = 90 + Math.random() * 60;
+  G.townEventMult = 1; G.townEventTimer = 0; G.townNextEventIn = 150 + Math.random() * 90;
   G.townLevelIdx = 0; G.townBuiltCount = 0; G.townNewUnlockAt = 0; G.cityServices = {};
   G.startTime = Date.now(); G.gameWon = false; G.winByBillion = false; G.gameStarted = false;
   G._badges = []; G._pbBeaten = false; G._newspapers = []; G._passiveTiersDone = []; G._hitRank1 = false;
@@ -2404,8 +2404,8 @@ function doRestart() {
   document.getElementById('event-bar').style.display = 'none';
   document.getElementById('notification').style.display = 'none';
   recalc(); updateOfficeLevel(); renderTab(); renderOffice(); updateStatus();
-  queueNotif('🔄 Firm Dissolved & Restarted',
-    'You\'ve shut down the old firm and started fresh.<br><br>New Tax Agent license. A clean spreadsheet. The garage office awaits.<br><br>The Big Four breathe a sigh of relief... for now.');
+  queueNotif('🔄 Starting Over!',
+    'Fresh start! Let\'s go! 🚀');
 }
 
 // ══════════════════════════════════════════════
@@ -2413,7 +2413,7 @@ function doRestart() {
 // ══════════════════════════════════════════════
 function showAbout() {
   queueNotif('ℹ️ About TaxClicker Pro™ 98',
-    '<b>TaxClicker Pro™ 98</b><br>Enterprise Accounting Simulator<br><br>Version 1.0.3 (Build 1998.04.15)<br><br>© 2026 TaxClicker Pty Ltd<br>ABN: 69 420 133 742<br><br>Powered by MYOB™-compatible engine<br>ATO Compliance Rating: ⭐⭐⭐⭐⭐<br><br><i>"The spreadsheet is always right."</i>');
+    '<b>TaxClicker Pro™ 98</b><br>Version 1.0.3<br>© 2026 TaxClicker Pty Ltd<br>⭐⭐⭐⭐⭐');
 }
 
 // ══════════════════════════════════════════════
@@ -2761,15 +2761,12 @@ showScoreboard();
 document.getElementById('player-name-input').addEventListener('keydown', e => { if (e.key==='Enter') startGame(); });
 
 setTimeout(()=>{
-  queueNotif('👋 Welcome to TaxClicker Pro™ 98!',
-    '🏙️ <b>You are the Mayor AND the accountant!</b><br><br>' +
-    '1️⃣ <b>Click the big button</b> on the left to earn money!<br>' +
-    '2️⃣ <b>Buy Upgrades</b> to earn money automatically.<br>' +
-    '3️⃣ <b>Build your Town</b> — unlock buildings as you earn more!<br>' +
-    '4️⃣ <b>Set your Tax Rate</b> in the Town tab to keep citizens happy.<br><br>' +
-    '⏱️ You have <b>15 minutes</b> — earn as much as you can!<br>' +
-    '🏆 Goal: reach <b>$1 Billion</b> before time runs out!<br><br>' +
-    '<i>Good luck, Mayor! Your town is counting on you! 🌟</i>');
+  queueNotif('👋 Welcome!',
+    '1️⃣ <b>Click</b> to earn money!<br>' +
+    '2️⃣ <b>Buy upgrades</b> to earn more.<br>' +
+    '3️⃣ <b>Build your town!</b><br><br>' +
+    '🏆 Goal: reach <b>$1 Billion!</b><br>' +
+    'Good luck, Mayor! 🌟');
 },500);
 </script>
 </body>
