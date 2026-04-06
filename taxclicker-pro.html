@@ -442,6 +442,10 @@ html, body {
 .town-cell.new-unlock { animation: popIn 0.6s cubic-bezier(0.175,0.885,0.32,1.275); box-shadow: 0 0 8px 3px #ffe066; }
 @keyframes popIn { 0%{transform:scale(0) rotate(-10deg);opacity:0;} 70%{transform:scale(1.25) rotate(3deg);} 100%{transform:scale(1) rotate(0deg);opacity:1;} }
 .town-cell.tappable { cursor: pointer; }
+.town-cell.on-fire { animation: fireGlow 0.5s ease-in-out infinite alternate; }
+.town-cell.on-fire::after { content:'🔥'; position:absolute; top:-4px; right:-2px; font-size:14px; animation: fireFlicker 0.3s infinite alternate; }
+@keyframes fireGlow { from{background:#ff9060;} to{background:#ff6030;} }
+@keyframes fireFlicker { from{transform:scale(1) rotate(-5deg);} to{transform:scale(1.2) rotate(5deg);} }
 .town-cell.town-tap { animation: townTap 0.25s ease; }
 @keyframes townTap { 0%{transform:scale(1);} 40%{transform:scale(0.82) rotate(-5deg);} 80%{transform:scale(1.15) rotate(3deg);} 100%{transform:scale(1);} }
 .town-sky { position:relative;overflow:hidden;height:32px;border:2px inset var(--win-dark);border-bottom:none;max-width:420px;margin-bottom:0;transition:background 2s ease; }
@@ -845,6 +849,8 @@ const G = {
   townEventMult: 1, townEventTimer: 0, townNextEventIn: 150 + Math.random() * 90,
   townLevelIdx: 0, townBuiltCount: 0, townNewUnlockAt: 0,
   cityServices: {},
+  disabledBuildings: {}, // { index: expireTimestamp }
+  disasterTimer: 0, nextDisasterIn: 120 + Math.random() * 60,
   notifQueue: [],
   // Win tracking
   startTime: Date.now(), gameWon: false, winByBillion: false,
@@ -1481,6 +1487,48 @@ function triggerTownEvent() {
 }
 
 // ══════════════════════════════════════════════
+//  TOWN DISASTERS
+// ══════════════════════════════════════════════
+const disasterTypes = [
+  { icon: '🔥', name: 'Fire!', msg: 'A building caught fire!', service: 'firestation' },
+  { icon: '🌊', name: 'Flood!', msg: 'A flood hit a building!', service: 'water' },
+  { icon: '💥', name: 'Breakdown!', msg: 'A building broke down!', service: 'roads' },
+];
+function triggerDisaster() {
+  const builtCount = townSlots.filter(s => G.totalEarned >= s.at).length;
+  if (builtCount < 3) return;
+  const dtype = disasterTypes[Math.floor(Math.random() * disasterTypes.length)];
+  // Fire station/relevant service prevents the disaster
+  if (G.cityServices[dtype.service]) {
+    queueNotif(dtype.icon + ' Disaster Stopped!', G.cityServices.firestation
+      ? '🚒 Your services saved the day!' : '🛡️ Your town was protected!');
+    return;
+  }
+  // Pick a random built building (skip index 0 so first house is safe)
+  const builtIdxs = [];
+  townSlots.forEach((s, i) => { if (i > 0 && G.totalEarned >= s.at && !G.disabledBuildings[i]) builtIdxs.push(i); });
+  if (builtIdxs.length === 0) return;
+  const target = builtIdxs[Math.floor(Math.random() * builtIdxs.length)];
+  const duration = 15000; // 15 seconds disabled
+  G.disabledBuildings[target] = Date.now() + duration;
+  playSound('notif');
+  queueNotif(dtype.icon + ' ' + dtype.name,
+    dtype.msg + '<br>' + townSlots[target].emoji + ' ' + townSlots[target].name + ' is out!<br>Build a <b>' + dtype.service + '</b> to prevent this!');
+  if (currentTab === 'town') renderTab();
+  setTimeout(() => {
+    delete G.disabledBuildings[target];
+    if (currentTab === 'town') renderTab();
+  }, duration);
+}
+// Clean up expired disabled buildings
+function cleanDisabledBuildings() {
+  const now = Date.now();
+  Object.keys(G.disabledBuildings).forEach(k => {
+    if (G.disabledBuildings[k] <= now) delete G.disabledBuildings[k];
+  });
+}
+
+// ══════════════════════════════════════════════
 //  TOWN GRID
 // ══════════════════════════════════════════════
 const townSlots = [
@@ -1614,7 +1662,9 @@ function renderTown() {
     const distanceFromFront = i - builtCount; // 0 = next to unlock, 1 = one after, etc.
     if (built) {
       const isNewest = isNewUnlock && i === builtCount - 1;
-      cells += `<div class="town-cell tappable${isNewest?' new-unlock':''}" onclick="tapBuilding(${i})" id="town-cell-${i}" title="Tap for bonus! ${s.name}: ${s.pop>0?'+'+s.pop+' pop':'generates income'}">${s.emoji}<span class="cell-label">${s.name}</span></div>`;
+      const isDisabled = G.disabledBuildings[i] && G.disabledBuildings[i] > Date.now();
+      const fireClass = isDisabled ? ' on-fire' : '';
+      cells += `<div class="town-cell tappable${isNewest?' new-unlock':''}${fireClass}" onclick="tapBuilding(${i})" id="town-cell-${i}" title="${isDisabled?'🔥 Out of action!':('Tap for bonus! '+s.name+': '+(s.pop>0?'+'+s.pop+' pop':'generates income'))}">${s.emoji}<span class="cell-label">${isDisabled?'🔥 OUT':s.name}</span></div>`;
     } else if (distanceFromFront < 3) {
       // Show next 3 as faded previews with cost
       const pct = distanceFromFront === 0 ? 70 : distanceFromFront === 1 ? 40 : 20;
@@ -1912,6 +1962,8 @@ function tapBuilding(idx) {
   if (G.gameWon) return;
   const s = townSlots[idx];
   if (!s || G.totalEarned < s.at) return;
+  // Disabled buildings give no tap bonus
+  if (G.disabledBuildings[idx] && G.disabledBuildings[idx] > Date.now()) return;
   // Bonus = building pop value * tax rate, min $1
   const bonus = Math.max(1, Math.round((s.pop || 1) * (G.taxRate / 100) * 10 * G.salesMultiplier));
   G.money += bonus; G.totalEarned += bonus; G.totalClicks++;
@@ -2394,6 +2446,13 @@ function tick(){
         G.townEventTimer=0;G.townNextEventIn=150+Math.random()*90;
         triggerTownEvent();
       }
+      // Disasters
+      G.disasterTimer+=dt;
+      if(G.disasterTimer>=G.nextDisasterIn){
+        G.disasterTimer=0;G.nextDisasterIn=120+Math.random()*60;
+        triggerDisaster();
+      }
+      cleanDisabledBuildings();
     }
 
     const hasSean=upgrades.find(u=>u.id==='sean')?.owned>0;
@@ -2531,6 +2590,7 @@ function doRestart() {
   G.taxRate = 15;
   G.townEventMult = 1; G.townEventTimer = 0; G.townNextEventIn = 150 + Math.random() * 90;
   G.townLevelIdx = 0; G.townBuiltCount = 0; G.townNewUnlockAt = 0; G.cityServices = {};
+  G.disabledBuildings = {}; G.disasterTimer = 0; G.nextDisasterIn = 120 + Math.random() * 60;
   G.startTime = Date.now(); G.gameWon = false; G.winByBillion = false; G.gameStarted = false;
   G._badges = []; G._pbBeaten = false; G._newspapers = []; G._passiveTiersDone = []; G._hitRank1 = false;
   const tray = document.getElementById('badge-tray'); if (tray) { tray.style.display='none'; tray.textContent=''; }
