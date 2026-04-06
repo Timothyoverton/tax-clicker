@@ -1263,6 +1263,12 @@ const achievementDefs = [
   { id:'a_passive',  emoji:'⚙️', label:'Earning passively!',     check: () => G.perSecond >= 1 },
   { id:'a_happy',    emoji:'😊', label:'Happy town! 70%+',       check: () => getHappinessScore() >= 70 },
   { id:'a_pb',       emoji:'🏆', label:'New personal best!',     check: () => !!G._pbBeaten },
+  { id:'a_svc1',     emoji:'🚒', label:'First city service!',    check: () => Object.keys(G.cityServices).length >= 1 },
+  { id:'a_svcall',   emoji:'🏛️', label:'All services built!',    check: () => Object.keys(G.cityServices).length >= cityServiceDefs.length },
+  { id:'a_survive',  emoji:'🛡️', label:'Survived a disaster!',   check: () => !!G._survivedDisaster },
+  { id:'a_town20',   emoji:'🌆', label:'20 buildings!',           check: () => townSlots.filter(s => G.totalEarned >= s.at).length >= 20 },
+  { id:'a_click1k',  emoji:'⚡', label:'1,000 clicks!',          check: () => G.totalClicks >= 1000 },
+  { id:'a_earn100m', emoji:'💎', label:'Earned $100 Million!',   check: () => G.totalEarned >= 1e8 },
 ];
 
 function checkAchievements() {
@@ -1542,6 +1548,7 @@ function triggerDisaster() {
   // Fire station/relevant service prevents the disaster
   if (G.cityServices[dtype.service]) {
     playSound('saved');
+    G._survivedDisaster = true;
     queueNotif(dtype.icon + ' Disaster Stopped!', G.cityServices.firestation
       ? '🚒 Your services saved the day!' : '🛡️ Your town was protected!');
     return;
@@ -2756,7 +2763,7 @@ function doRestart() {
   G.townLevelIdx = 0; G.townBuiltCount = 0; G.townNewUnlockAt = 0; G.cityServices = {};
   G.disabledBuildings = {}; G.disasterTimer = 0; G.nextDisasterIn = 120 + Math.random() * 60;
   G.startTime = Date.now(); G.gameWon = false; G.winByBillion = false; G.gameStarted = false;
-  G._badges = []; G._pbBeaten = false; G._newspapers = []; G._passiveTiersDone = []; G._hitRank1 = false;
+  G._badges = []; G._pbBeaten = false; G._newspapers = []; G._passiveTiersDone = []; G._hitRank1 = false; G._survivedDisaster = false;
   const tray = document.getElementById('badge-tray'); if (tray) { tray.style.display='none'; tray.textContent=''; }
   G.peakRPS = 0; G.peakClickVal = 0;
   G.clickRevenue = 0; G.passiveRevenue = 0;
