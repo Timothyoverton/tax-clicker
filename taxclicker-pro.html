@@ -1125,6 +1125,17 @@ function checkMilestones() {
         playSound('notif');
       }
     });
+    // First time hitting #1 in the industry rankings
+    if (!G._hitRank1) {
+      const rank = getRivalRank();
+      const myPos = rank.findIndex(r => r.name === 'YOUR FIRM') + 1;
+      if (myPos === 1) {
+        G._hitRank1 = true;
+        playSound('levelup');
+        launchConfetti();
+        queueNotif('🥇 YOU\'RE #1 IN AUSTRALIA!', '🎉🎉🎉<br><br>Your firm just overtook <b>' + (rank[1]?.name || 'the competition') + '</b>!<br><br>You are now the <b>#1 accounting firm</b> in the country!<br><br>🏆 PwC, Deloitte, KPMG and EY are all behind you now!');
+      }
+    }
     // Personal best celebration
     if (!G._pbBeaten && G._personalBest > 0 && G.totalEarned > G._personalBest) {
       G._pbBeaten = true;
@@ -2342,7 +2353,7 @@ function doRestart() {
   G.townEventMult = 1; G.townEventTimer = 0; G.townNextEventIn = 90 + Math.random() * 60;
   G.townLevelIdx = 0; G.townBuiltCount = 0; G.townNewUnlockAt = 0; G.cityServices = {};
   G.startTime = Date.now(); G.gameWon = false; G.winByBillion = false; G.gameStarted = false;
-  G._badges = []; G._pbBeaten = false; G._newspapers = []; G._passiveTiersDone = [];
+  G._badges = []; G._pbBeaten = false; G._newspapers = []; G._passiveTiersDone = []; G._hitRank1 = false;
   const tray = document.getElementById('badge-tray'); if (tray) { tray.style.display='none'; tray.textContent=''; }
   G.peakRPS = 0; G.peakClickVal = 0;
   G.clickRevenue = 0; G.passiveRevenue = 0;
