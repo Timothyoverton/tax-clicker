@@ -3380,6 +3380,12 @@ function showScoreboard(msg) {
     const diffLabel = save.G.difficulty ? (' [' + save.G.difficulty.toUpperCase() + ']') : '';
     contBtn.style.display = 'inline-block';
     if (contInfo) { contInfo.textContent = '💾 Saved game: $' + fmt(save.G.totalEarned) + ' earned, ~' + minsLeft + ' min left' + diffLabel; contInfo.style.display = 'block'; }
+    // Pre-fill inputs from saved game
+    const nameInp = document.getElementById('player-name-input');
+    const townInp = document.getElementById('town-name-input');
+    if (nameInp && save.G.playerName && save.G.playerName !== 'Anonymous') nameInp.value = save.G.playerName;
+    if (townInp && save.G.townName && save.G.townName !== 'My Town') townInp.value = save.G.townName;
+    if (save.G.difficulty) setDifficulty(save.G.difficulty);
   } else if (contBtn) {
     contBtn.style.display = 'none';
     if (contInfo) contInfo.style.display = 'none';
