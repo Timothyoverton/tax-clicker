@@ -479,6 +479,24 @@ html, body {
   position:fixed; font-size:14px; z-index:500; pointer-events:none;
   transition: left 0.8s ease-in, top 0.8s ease-in, opacity 0.8s ease-in, transform 0.8s ease-in;
 }
+.speech-bubble {
+  position:absolute; z-index:12; pointer-events:none;
+  background:white; border:1px solid #999; border-radius:8px;
+  padding:2px 5px; font-size:8px; font-family:'IBM Plex Mono',monospace;
+  white-space:nowrap; box-shadow:1px 1px 3px rgba(0,0,0,0.2);
+  animation: bubbleUp 2.5s ease-out forwards;
+}
+.speech-bubble::after {
+  content:''; position:absolute; bottom:-5px; left:10px;
+  border-left:5px solid transparent; border-right:5px solid transparent;
+  border-top:5px solid white;
+}
+@keyframes bubbleUp {
+  0% { opacity:0; transform:translateY(4px) scale(0.7); }
+  15% { opacity:1; transform:translateY(0) scale(1); }
+  75% { opacity:1; }
+  100% { opacity:0; transform:translateY(-8px); }
+}
 .vehicle-sprite {
   position:absolute; font-size:14px; z-index:9; pointer-events:none;
   filter: drop-shadow(0 1px 1px rgba(0,0,0,0.3));
@@ -2107,6 +2125,37 @@ function spawnWeatherParticles() {
 }
 
 // Coin trail — coins fly from buildings to the balance display
+// Citizen speech bubbles — reactions tied to happiness/tax rate
+const happySpeech = ['I ❤️ this town!','Yay!','Great mayor!','Love it here!','Best town!','Thanks mayor!','Taxes work! 🌟','Parks are fun!','Love our school!','Go team!'];
+const okSpeech = ['Hmm ok...','Not bad.','Could be better.','Taxes are ok.','It\'s fine.','Need more parks.'];
+const sadSpeech = ['Taxes too high! 😡','I wanna leave!','Too expensive!','Not happy! 😢','Help us mayor!','We need a break!'];
+let _speechTimer = 0;
+function spawnSpeechBubble() {
+  if (currentTab !== 'town' || G.gameWon) return;
+  const grid = document.getElementById('town-grid-el');
+  if (!grid) return;
+  const wrap = grid.parentElement;
+  const builtCount = townSlots.filter(s => G.totalEarned >= s.at).length;
+  if (builtCount < 2) return;
+  // Limit active bubbles
+  if (wrap.querySelectorAll('.speech-bubble').length >= 2) return;
+  const idx = Math.floor(Math.random() * builtCount);
+  const cell = document.getElementById('town-cell-' + idx);
+  if (!cell) return;
+  const cr = cell.getBoundingClientRect();
+  const wr = wrap.getBoundingClientRect();
+  const hScore = getHappinessScore();
+  const pool = hScore >= 65 ? happySpeech : hScore >= 40 ? okSpeech : sadSpeech;
+  const text = pool[Math.floor(Math.random() * pool.length)];
+  const bubble = document.createElement('div');
+  bubble.className = 'speech-bubble';
+  bubble.textContent = text;
+  bubble.style.left = (cr.left - wr.left + cr.width / 2 - 20) + 'px';
+  bubble.style.top = (cr.top - wr.top - 18) + 'px';
+  wrap.appendChild(bubble);
+  setTimeout(() => bubble.remove(), 2600);
+}
+
 let _coinTrailTimer = 0;
 function spawnCoinTrail() {
   if (currentTab !== 'town' || G.gameWon || G.perSecond < 1) return;
@@ -2610,6 +2659,9 @@ function tick(){
     // Coin trail every ~5 seconds
     _coinTrailTimer += 2;
     if (_coinTrailTimer >= 5) { _coinTrailTimer = 0; spawnCoinTrail(); }
+    // Speech bubbles every ~6 seconds
+    _speechTimer += 2;
+    if (_speechTimer >= 6) { _speechTimer = 0; spawnSpeechBubble(); }
   }
   // Decay combo display when idle
   updateComboDisplay();
