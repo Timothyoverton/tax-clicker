@@ -788,8 +788,9 @@ html, body {
       <tr><th>Input</th><th>Action</th></tr>
       <tr><td>Mouse click button</td><td>Lodge financials & tax returns</td></tr>
       <tr><td>Spacebar</td><td>Lodge financials & tax returns</td></tr>
+      <tr><td>Enter / Escape</td><td>Dismiss popup notifications</td></tr>
+      <tr><td>Keys 1-8</td><td>Switch tabs (1=Dashboard, 2=Town, 3=Upgrades...)</td></tr>
       <tr><td>F1</td><td>Open this help guide</td></tr>
-      <tr><td>Click tabs</td><td>Switch between Dashboard, Upgrades, Staff, Clients, Sales, Rivals</td></tr>
     </table>
 
     <h2>🏆 WIN CONDITION</h2>
@@ -2002,6 +2003,12 @@ document.getElementById('big-click').addEventListener('click', (e) => {
   checkWin();
 });
 document.addEventListener('keydown', (e) => {
+  // Number keys 1-8 switch tabs
+  if (G.gameStarted && !G.gameWon && e.key >= '1' && e.key <= '8' && !e.ctrlKey && !e.altKey && !e.metaKey) {
+    const tabs = ['dashboard','town','upgrades','staff','clients','sales','rivals','budget'];
+    const idx = parseInt(e.key) - 1;
+    if (idx < tabs.length) { switchTab(tabs[idx]); return; }
+  }
   if (e.code === 'Space' && document.getElementById('notification').style.display !== 'block') {
     e.preventDefault();
     if (G.gameWon) return;
@@ -2022,6 +2029,10 @@ document.addEventListener('keydown', (e) => {
     btn.style.borderStyle = 'inset';
     setTimeout(() => btn.style.borderStyle = 'outset', 80);
     checkWin();
+  }
+  // Enter/Escape dismiss notifications
+  if ((e.code === 'Enter' || e.code === 'Escape') && document.getElementById('notification').style.display === 'block') {
+    closeNotif();
   }
 });
 function showFloat(x, y, amount) {
