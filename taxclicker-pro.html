@@ -957,12 +957,17 @@ function playSound(type) {
     levelup: [[523, 0, 0.08], [659, 0.09, 0.08], [784, 0.18, 0.08], [1047, 0.27, 0.18]],
     win:     [[523, 0, 0.09], [659, 0.1, 0.09], [784, 0.2, 0.09], [1047, 0.3, 0.09], [1319, 0.42, 0.28]],
     notif:   [[660, 0, 0.06], [880, 0.07, 0.08]],
+    rain:    [[220, 0, 0.15], [196, 0.08, 0.15], [175, 0.16, 0.20]],
+    festival:[[784, 0, 0.06], [988, 0.06, 0.06], [1175, 0.12, 0.06], [1319, 0.18, 0.10]],
+    disaster:[[330, 0, 0.12], [220, 0.1, 0.12], [165, 0.2, 0.20]],
+    saved:   [[440, 0, 0.06], [554, 0.06, 0.06], [659, 0.12, 0.10]],
+    boom:    [[523, 0, 0.06], [784, 0.06, 0.06], [1047, 0.12, 0.06], [1319, 0.18, 0.12]],
   };
   const seq = notes[type] || notes.click;
   seq.forEach(([freq, delay, dur]) => {
     const o = ac.createOscillator();
     const og = ac.createGain();
-    o.type = type === 'click' ? 'triangle' : 'sine';
+    o.type = type === 'click' ? 'triangle' : type === 'rain' ? 'sawtooth' : type === 'disaster' ? 'square' : 'sine';
     o.frequency.value = freq;
     og.gain.setValueAtTime(0.08, t + delay);
     og.gain.exponentialRampToValueAtTime(0.001, t + delay + dur);
@@ -1101,6 +1106,7 @@ function triggerCrisis() {
   G.crisisName = evt.name;
   if (evt.earnMult > 1) { G.taxRushActive = true; G.taxRushMultiplier = evt.earnMult; }
 
+  playSound(evt.earnMult > 1 ? 'boom' : 'disaster');
   const bar = document.getElementById('event-bar');
   bar.textContent = evt.banner;
   bar.className = evt.cls;
@@ -1121,6 +1127,7 @@ function triggerCrisis() {
 function triggerTaxRush() {
   if (G.taxRushActive || G.crisisActive) return;
   G.taxRushActive = true; G.taxRushMultiplier = 3;
+  playSound('boom');
   const bar = document.getElementById('event-bar');
   bar.textContent = '\u26A1 EOFY RUSH! All earnings 3x for 30 seconds! \u26A1';
   bar.className = 'eofy';
@@ -1511,6 +1518,7 @@ const townEvents = [
 function triggerTownEvent() {
   const evt = townEvents[Math.floor(Math.random() * townEvents.length)];
   G.townEventMult = evt.mult;
+  playSound(evt.mult >= 1 ? 'festival' : 'rain');
   queueNotif(evt.icon + ' TOWN EVENT: ' + evt.name, evt.popup);
   if (currentTab === 'town') renderTab();
   setTimeout(() => {
@@ -1533,6 +1541,7 @@ function triggerDisaster() {
   const dtype = disasterTypes[Math.floor(Math.random() * disasterTypes.length)];
   // Fire station/relevant service prevents the disaster
   if (G.cityServices[dtype.service]) {
+    playSound('saved');
     queueNotif(dtype.icon + ' Disaster Stopped!', G.cityServices.firestation
       ? '🚒 Your services saved the day!' : '🛡️ Your town was protected!');
     return;
@@ -1544,7 +1553,7 @@ function triggerDisaster() {
   const target = builtIdxs[Math.floor(Math.random() * builtIdxs.length)];
   const duration = 15000; // 15 seconds disabled
   G.disabledBuildings[target] = Date.now() + duration;
-  playSound('notif');
+  playSound('disaster');
   queueNotif(dtype.icon + ' ' + dtype.name,
     dtype.msg + '<br>' + townSlots[target].emoji + ' ' + townSlots[target].name + ' is out!<br>Build a <b>' + dtype.service + '</b> to prevent this!');
   if (currentTab === 'town') renderTab();
