@@ -2007,29 +2007,61 @@ function doPowerClick() {
   checkWin();
 }
 
+// Building type tap bonuses — different buildings are worth different amounts
+const buildingTapInfo = {
+  'House':    { mult: 1.0, emoji: ['👨‍👩‍👧','👶','🏠'], sound: 'click' },
+  'Park':     { mult: 0.5, emoji: ['🌸','🌺','🦋'], sound: 'click' },
+  'Shop':     { mult: 2.0, emoji: ['💰','🛍️','💵'], sound: 'buy' },
+  'School':   { mult: 1.5, emoji: ['📚','💡','✏️'], sound: 'click' },
+  'Hospital': { mult: 1.5, emoji: ['💊','❤️','🏥'], sound: 'click' },
+  'Bank':     { mult: 3.0, emoji: ['💰','💎','🏦'], sound: 'buy' },
+  'Tower':    { mult: 2.0, emoji: ['🏢','💼','📈'], sound: 'click' },
+  'Hotel':    { mult: 2.5, emoji: ['🛎️','⭐','🏨'], sound: 'buy' },
+  'Mall':     { mult: 3.0, emoji: ['🛒','💳','🎁'], sound: 'buy' },
+  'Stadium':  { mult: 2.0, emoji: ['⚽','🎉','🏟️'], sound: 'click' },
+  'Capitol':  { mult: 4.0, emoji: ['🏛️','⚖️','🌟'], sound: 'levelup' },
+  'Monument': { mult: 3.5, emoji: ['🗼','✨','🌟'], sound: 'levelup' },
+  'Megacity': { mult: 5.0, emoji: ['🏙️','🚀','💎'], sound: 'levelup' },
+};
 function tapBuilding(idx) {
   if (G.gameWon) return;
   const s = townSlots[idx];
   if (!s || G.totalEarned < s.at) return;
   // Disabled buildings give no tap bonus
   if (G.disabledBuildings[idx] && G.disabledBuildings[idx] > Date.now()) return;
-  // Bonus = building pop value * tax rate, min $1
-  const bonus = Math.max(1, Math.round((s.pop || 1) * (G.taxRate / 100) * 10 * G.salesMultiplier));
+  // Building-specific bonus multiplier
+  const info = buildingTapInfo[s.name] || { mult: 1, emoji: ['💰'], sound: 'click' };
+  const bonus = Math.max(1, Math.round((s.pop || 1) * (G.taxRate / 100) * 10 * G.salesMultiplier * info.mult));
   G.money += bonus; G.totalEarned += bonus; G.totalClicks++;
   G.clickRevenue += bonus;
-  playSound('click');
+  playSound(info.sound);
   // Animate the cell
   const cell = document.getElementById('town-cell-' + idx);
   if (cell) {
     cell.classList.remove('town-tap');
-    void cell.offsetWidth; // reflow to restart animation
+    void cell.offsetWidth;
     cell.classList.add('town-tap');
   }
-  // Show floating money above the cell
+  // Show floating money + themed emoji burst
   const cellEl = document.getElementById('town-cell-' + idx);
   if (cellEl) {
     const r = cellEl.getBoundingClientRect();
     showFloat(r.left + r.width/2, r.top, bonus);
+    // Themed emoji burst from the building
+    const em = info.emoji[Math.floor(Math.random() * info.emoji.length)];
+    const p = document.createElement('span');
+    p.style.cssText = 'position:fixed;font-size:16px;pointer-events:none;z-index:500;transition:all 0.6s ease-out;';
+    p.textContent = em;
+    p.style.left = (r.left + r.width/2 - 8) + 'px';
+    p.style.top = (r.top - 4) + 'px';
+    p.style.opacity = '1';
+    document.body.appendChild(p);
+    requestAnimationFrame(() => {
+      p.style.top = (r.top - 30 - Math.random()*20) + 'px';
+      p.style.left = (r.left + r.width/2 - 8 + (Math.random()-0.5)*30) + 'px';
+      p.style.opacity = '0';
+    });
+    setTimeout(() => p.remove(), 700);
   }
   checkWin();
 }
