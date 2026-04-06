@@ -753,9 +753,9 @@ html, body {
     <span>⚠️ Confirm Restart</span>
   </div>
   <div class="rc-body">
-    <p>🚨 <b>Are you sure you want to restart?</b> 🚨</p>
-    <p>This will dissolve your firm, fire all staff (including Max Wellington), lose all clients, and reset your revenue to $0.</p>
-    <p style="color:var(--red-loss);font-weight:700;">This action cannot be undone!</p>
+    <p>🚨 <b>Start over?</b> 🚨</p>
+    <p>This will reset everything!<br>All your money, workers and town will be gone.</p>
+    <p style="color:var(--red-loss);font-weight:700;">You can't undo this!</p>
     <div class="rc-buttons">
       <button class="rc-btn danger" onclick="doRestart()">🔄 Restart Firm</button>
       <button class="rc-btn" onclick="closeRestart()">Cancel</button>
@@ -2579,16 +2579,16 @@ function updateStatus(){
     const svcCount=Object.keys(G.cityServices).length;
     const nextSvc=cityServiceDefs.find(s=>!G.cityServices[s.id]);
     let tip='💡 Keep clicking to earn more money!';
-    if(G.money>=deskCost&&desks<=1)                        tip='💡 Buy a Desk in the Upgrades tab to unlock staff slots!';
-    else if(available>0&&G.money>=internCost&&staff===0)   tip='💡 Go to the Staff tab — you can hire your first worker!';
-    else if(available<=0&&G.money>=deskCost)               tip='💡 Buy more Desks (Upgrades tab) to hire more staff!';
-    else if(hScore<45)                                     tip='💡 Citizens are unhappy! Lower your Tax Rate in the Town tab.';
-    else if(builtCount<3)                                  tip='💡 Keep earning — new buildings will appear in your Town!';
-    else if(currentTab!=='town'&&builtCount>=3&&svcCount===0&&nextSvc&&G.money>=nextSvc.cost) tip='💡 Build City Services in the Town tab to boost income!';
-    else if(G.salesMultiplier===1&&G.money>=500)           tip='💡 Go to the Sales tab — a sales team multiplies ALL your money!';
-    else if(G.perSecond===0)                               tip='💡 Buy upgrades to earn money automatically — even when not clicking!';
-    else if(!G.gameWon&&(Date.now()-G.startTime)/1000>780)  tip='⚡ Less than 2 minutes left — click as fast as you can!';
-    else                                                   tip='💡 Check the Town tab and try adjusting your Tax Rate!';
+    if(G.money>=deskCost&&desks<=1)                        tip='💡 Buy a Desk to hire workers!';
+    else if(available>0&&G.money>=internCost&&staff===0)   tip='💡 Hire your first worker! (Staff tab)';
+    else if(available<=0&&G.money>=deskCost)               tip='💡 Need more desks for more workers!';
+    else if(hScore<45)                                     tip='💡 People are sad! Lower the tax rate!';
+    else if(builtCount<3)                                  tip='💡 Keep earning — new buildings coming!';
+    else if(currentTab!=='town'&&builtCount>=3&&svcCount===0&&nextSvc&&G.money>=nextSvc.cost) tip='💡 Build services in Town tab!';
+    else if(G.salesMultiplier===1&&G.money>=500)           tip='💡 Try the Sales tab — it makes ALL money bigger!';
+    else if(G.perSecond===0)                               tip='💡 Buy upgrades to earn while resting!';
+    else if(!G.gameWon&&(Date.now()-G.startTime)/1000>((G.gameDuration||900)-120)) tip='⚡ Almost out of time — click fast!';
+    else                                                   tip='💡 Check your Town! Try the tax slider!';
     tipEl.textContent=tip;
   }
   // Click button label + style evolves with progress
