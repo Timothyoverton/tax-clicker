@@ -1187,21 +1187,29 @@ const achievementDefs = [
 function checkAchievements() {
   if (!G.gameStarted || G.gameWon) return;
   if (!G._badges) G._badges = [];
-  let changed = false;
+  let newBadge = null;
   achievementDefs.forEach(def => {
     if (!G._badges.includes(def.id) && def.check()) {
       G._badges.push(def.id);
-      changed = true;
-      // Small pop notification for first few badges only
-      if (G._badges.length <= 5) queueNotif('🏅 Badge Unlocked: ' + def.label, def.emoji + ' ' + def.emoji + ' ' + def.emoji + '<br><br>You earned the <b>' + def.label + '</b> badge!<br>Check your badge tray! 👇');
+      newBadge = def;
     }
   });
-  if (changed) {
+  if (newBadge) {
     const tray = document.getElementById('badge-tray');
     if (tray) {
       tray.style.display = 'block';
       tray.textContent = G._badges.map(id => achievementDefs.find(d=>d.id===id)?.emoji || '').join(' ');
       tray.title = 'Badges: ' + G._badges.map(id => achievementDefs.find(d=>d.id===id)?.label || '').join(', ');
+      // Brief flash on tray instead of a blocking popup
+      tray.style.background = '#fff176';
+      setTimeout(() => { if (tray) tray.style.background = '#fffde7'; }, 800);
+    }
+    // Only show popup for ALL badges completed (the final achievement)
+    if (G._badges.length === achievementDefs.length) {
+      playSound('win');
+      queueNotif('🏅 ALL BADGES COLLECTED!', '🌟🌟🌟<br><br>You earned every single badge!<br><br>' + achievementDefs.map(d=>d.emoji).join(' ') + '<br><br>You are a TaxClicker Pro™ legend!');
+    } else {
+      playSound('buy');
     }
   }
 }
