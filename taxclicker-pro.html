@@ -1046,28 +1046,28 @@ function getRivalRank() {
 //  UPGRADES
 // ══════════════════════════════════════════════
 const upgrades = [
-  { id: 'desk', name: 'Extra Desk', desc: 'A slightly wobbly Officeworks desk', baseCost: 10, costMult: 1.4, owned: 0, type: 'click', value: 1, category: 'office', icon: '🪑' },
-  { id: 'calculator', name: 'Casio Calculator', desc: 'For GST calculations, obviously', baseCost: 50, costMult: 1.5, owned: 0, type: 'click', value: 3, category: 'office', icon: '🧮' },
-  { id: 'printer', name: 'Laser Printer', desc: 'It jams. Always.', baseCost: 200, costMult: 1.6, owned: 0, type: 'passive', value: 1, category: 'office', icon: '🖨️' },
-  { id: 'copier', name: 'Industrial Copier', desc: 'Prints BAS forms by the ream', baseCost: 750, costMult: 1.5, owned: 0, type: 'passive', value: 4, category: 'office', icon: '📠' },
-  { id: 'server', name: 'File Server', desc: 'Runs MYOB at 2fps', baseCost: 3000, costMult: 1.6, owned: 0, type: 'passive', value: 15, category: 'office', icon: '🖥️' },
-  { id: 'meeting', name: 'Meeting Room', desc: '"Could have been a Teams call"', baseCost: 10000, costMult: 1.7, owned: 0, type: 'passive', value: 50, category: 'office', icon: '🏢' },
-  { id: 'intern', name: 'Work Experience Kid', desc: 'Gets flat whites. Sometimes files.', baseCost: 25, costMult: 1.35, owned: 0, type: 'passive', value: 0.5, category: 'staff', icon: '🧑‍🎓' },
-  { id: 'junior', name: 'Junior Accountant', desc: 'Fresh CA grad, full of hope', baseCost: 150, costMult: 1.5, owned: 0, type: 'passive', value: 2, category: 'staff', icon: '👔' },
-  { id: 'senior', name: 'Senior Accountant', desc: 'Hope replaced by spreadsheets', baseCost: 1500, costMult: 1.6, owned: 0, type: 'passive', value: 10, category: 'staff', icon: '🧑‍💼' },
-  { id: 'cpa', name: 'CA Partner', desc: 'Drives a Hilux. Eats lunch at desk.', baseCost: 8000, costMult: 1.7, owned: 0, type: 'passive', value: 40, category: 'staff', icon: '💼' },
-  { id: 'cfo', name: 'CFO', desc: 'Costs more than they save', baseCost: 50000, costMult: 1.8, owned: 0, type: 'both', value: 100, clickVal: 50, category: 'staff', icon: '👑' },
-  { id: 'sean', name: '\u2B50 Max Wellington \u2B50', desc: 'THE ULTIMATE ACCOUNTANT. Lodges BAS in his sleep. Legends say he reconciled the entire ATO database over a long weekend.', baseCost: 1000000, costMult: 2.5, owned: 0, type: 'both', value: 500, clickVal: 200, category: 'staff', icon: '🐐', isSean: true },
-  { id: 'freelancer', name: 'Sole Trader', desc: 'ABN and a dream', baseCost: 100, costMult: 1.4, owned: 0, type: 'passive', value: 3, category: 'clients', icon: '🎨' },
-  { id: 'smallbiz', name: 'Pty Ltd Client', desc: 'Mum & Dad small business', baseCost: 800, costMult: 1.55, owned: 0, type: 'passive', value: 8, category: 'clients', icon: '🏪' },
-  { id: 'corporate', name: 'ASX-Listed Account', desc: 'ASX 200 adjacent', baseCost: 5000, costMult: 1.65, owned: 0, type: 'passive', value: 30, category: 'clients', icon: '🏛️' },
-  { id: 'govt', name: 'Government Contract', desc: 'The ATO paperwork never ends', baseCost: 30000, costMult: 1.75, owned: 0, type: 'both', value: 80, clickVal: 25, category: 'clients', icon: '🏦' },
+  { id: 'desk', name: 'Extra Desk', desc: 'More room for workers!', baseCost: 10, costMult: 1.4, owned: 0, type: 'click', value: 1, category: 'office', icon: '🪑' },
+  { id: 'calculator', name: 'Calculator', desc: 'Counts money faster!', baseCost: 50, costMult: 1.5, owned: 0, type: 'click', value: 3, category: 'office', icon: '🧮' },
+  { id: 'printer', name: 'Printer', desc: 'Prints papers for you!', baseCost: 200, costMult: 1.6, owned: 0, type: 'passive', value: 1, category: 'office', icon: '🖨️' },
+  { id: 'copier', name: 'Copy Machine', desc: 'Makes lots of copies!', baseCost: 750, costMult: 1.5, owned: 0, type: 'passive', value: 4, category: 'office', icon: '📠' },
+  { id: 'server', name: 'Computer Server', desc: 'Super fast computer!', baseCost: 3000, costMult: 1.6, owned: 0, type: 'passive', value: 15, category: 'office', icon: '🖥️' },
+  { id: 'meeting', name: 'Meeting Room', desc: 'A room to plan things!', baseCost: 10000, costMult: 1.7, owned: 0, type: 'passive', value: 50, category: 'office', icon: '🏢' },
+  { id: 'intern', name: 'Helper Kid', desc: 'A new helper joins!', baseCost: 25, costMult: 1.35, owned: 0, type: 'passive', value: 0.5, category: 'staff', icon: '🧑‍🎓' },
+  { id: 'junior', name: 'Junior Worker', desc: 'Just learning the job!', baseCost: 150, costMult: 1.5, owned: 0, type: 'passive', value: 2, category: 'staff', icon: '👔' },
+  { id: 'senior', name: 'Senior Worker', desc: 'Really good at the job!', baseCost: 1500, costMult: 1.6, owned: 0, type: 'passive', value: 10, category: 'staff', icon: '🧑‍💼' },
+  { id: 'cpa', name: 'Expert Partner', desc: 'A real pro! Earns lots!', baseCost: 8000, costMult: 1.7, owned: 0, type: 'passive', value: 40, category: 'staff', icon: '💼' },
+  { id: 'cfo', name: 'Money Boss', desc: 'Runs the whole money team!', baseCost: 50000, costMult: 1.8, owned: 0, type: 'both', value: 100, clickVal: 50, category: 'staff', icon: '👑' },
+  { id: 'sean', name: '\u2B50 Max Wellington \u2B50', desc: 'THE BEST WORKER EVER! Super strong!', baseCost: 1000000, costMult: 2.5, owned: 0, type: 'both', value: 500, clickVal: 200, category: 'staff', icon: '🐐', isSean: true },
+  { id: 'freelancer', name: 'Small Client', desc: 'A person who needs help!', baseCost: 100, costMult: 1.4, owned: 0, type: 'passive', value: 3, category: 'clients', icon: '🎨' },
+  { id: 'smallbiz', name: 'Shop Client', desc: 'A little shop needs you!', baseCost: 800, costMult: 1.55, owned: 0, type: 'passive', value: 8, category: 'clients', icon: '🏪' },
+  { id: 'corporate', name: 'Big Company', desc: 'A huge company pays lots!', baseCost: 5000, costMult: 1.65, owned: 0, type: 'passive', value: 30, category: 'clients', icon: '🏛️' },
+  { id: 'govt', name: 'Government Job', desc: 'Work for the government!', baseCost: 30000, costMult: 1.75, owned: 0, type: 'both', value: 80, clickVal: 25, category: 'clients', icon: '🏦' },
   // Sales Team
-  { id: 'coldcaller', name: 'Cold Caller', desc: 'Dials 200 numbers a day. Gets hung up on 199 times.', baseCost: 500, costMult: 1.5, owned: 0, type: 'sales', value: 0.1, category: 'sales', icon: '📞' },
-  { id: 'bdm', name: 'Business Dev Manager', desc: 'Lives on LinkedIn. "Just circling back!"', baseCost: 3000, costMult: 1.55, owned: 0, type: 'sales', value: 0.15, category: 'sales', icon: '🤝' },
-  { id: 'accountmgr', name: 'Account Manager', desc: 'Keeps clients from leaving. Barely.', baseCost: 12000, costMult: 1.6, owned: 0, type: 'sales', value: 0.2, category: 'sales', icon: '📋' },
-  { id: 'salesdir', name: 'Sales Director', desc: 'Has a whiteboard with "PIPELINE" written on it', baseCost: 60000, costMult: 1.7, owned: 0, type: 'sales', value: 0.3, category: 'sales', icon: '📊' },
-  { id: 'brad', name: '\u2B50 Jake Harper — CRO \u2B50', desc: 'THE CHIEF REVENUE OFFICER. Closes deals in his sleep. Once sold an audit to the ATO themselves. His pipeline is a firehose.', baseCost: 750000, costMult: 3, owned: 0, type: 'sales', value: 2.0, category: 'sales', icon: '🦈', isBrad: true },
+  { id: 'coldcaller', name: 'Phone Caller', desc: 'Calls people to sell!', baseCost: 500, costMult: 1.5, owned: 0, type: 'sales', value: 0.1, category: 'sales', icon: '📞' },
+  { id: 'bdm', name: 'Deal Maker', desc: 'Finds new customers!', baseCost: 3000, costMult: 1.55, owned: 0, type: 'sales', value: 0.15, category: 'sales', icon: '🤝' },
+  { id: 'accountmgr', name: 'Client Helper', desc: 'Keeps customers happy!', baseCost: 12000, costMult: 1.6, owned: 0, type: 'sales', value: 0.2, category: 'sales', icon: '📋' },
+  { id: 'salesdir', name: 'Sales Leader', desc: 'Leads the sales team!', baseCost: 60000, costMult: 1.7, owned: 0, type: 'sales', value: 0.3, category: 'sales', icon: '📊' },
+  { id: 'brad', name: '\u2B50 Jake Harper \u2B50', desc: 'THE BEST SELLER EVER! Super power!', baseCost: 750000, costMult: 3, owned: 0, type: 'sales', value: 2.0, category: 'sales', icon: '🦈', isBrad: true },
 ];
 
 function getCost(u) {
@@ -1546,11 +1546,11 @@ function renderRivals() {
       </tr>`;
     }).join('')}
     <tr><td class="row-header">${3+ranked.length}</td><td colspan="4"></td></tr>
-    <tr><td class="row-header">${4+ranked.length}</td><td></td><td colspan="3" style="font-weight:700;">📊 COMPETITIVE INTELLIGENCE</td></tr>
-    <tr><td class="row-header">${5+ranked.length}</td><td></td><td colspan="3" style="color:#555;">Rival firms grow automatically. Outpace them by upgrading staff & acquiring clients!</td></tr>
-    <tr><td class="row-header">${6+ranked.length}</td><td></td><td colspan="3" style="color:#555;">During economic crises, rivals slow down — use it to your advantage!</td></tr>
-    <tr><td class="row-header">${7+ranked.length}</td><td></td><td colspan="3" style="color:#555;">PwC is aggressive. Keep an eye on Deloitte — they\'re the fastest grower.</td></tr>
-    ${hasSean ? `<tr><td class="row-header">${8+ranked.length}</td><td></td><td colspan="3" class="cell-sean">🐐 Max Wellington on your team — rival growth reduced by 50%!</td></tr>` : ''}
+    <tr><td class="row-header">${4+ranked.length}</td><td></td><td colspan="3" style="font-weight:700;">💡 TIPS</td></tr>
+    <tr><td class="row-header">${5+ranked.length}</td><td></td><td colspan="3" style="color:#555;">Other firms grow too! Buy upgrades to stay ahead!</td></tr>
+    <tr><td class="row-header">${6+ranked.length}</td><td></td><td colspan="3" style="color:#555;">When bad events happen, rivals slow down — your chance!</td></tr>
+    <tr><td class="row-header">${7+ranked.length}</td><td></td><td colspan="3" style="color:#555;">Try to be #1! 🥇</td></tr>
+    ${hasSean ? `<tr><td class="row-header">${8+ranked.length}</td><td></td><td colspan="3" class="cell-sean">🐐 Max slows rivals by 50%!</td></tr>` : ''}
   </table>`;
 }
 
