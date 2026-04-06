@@ -2917,6 +2917,46 @@ function showWinScreen() {
         '<div style="font-size:9px;color:#666;text-align:center;margin-bottom:4px;">' + badgeLabels + '</div>';
     })() +
 
+    (() => {
+      // Mayor's Report Card — letter grades on key metrics
+      function grade(pct) {
+        if (pct >= 95) return ['A+','#28a745'];
+        if (pct >= 85) return ['A','#28a745'];
+        if (pct >= 75) return ['B+','#5cb85c'];
+        if (pct >= 65) return ['B','#8bc34a'];
+        if (pct >= 50) return ['C','#ffc107'];
+        if (pct >= 35) return ['D','#ff9800'];
+        return ['F','#dc3545'];
+      }
+      const builtCount = townSlots.filter(s => G.totalEarned >= s.at).length;
+      const hScore = getHappinessScore();
+      const svcCount = Object.keys(G.cityServices).length;
+      const badgeCount = (G._badges || []).length;
+      const elapsedSec = (Date.now() - G.startTime) / 1000;
+      const cps = elapsedSec > 0 ? G.totalClicks / elapsedSec : 0;
+      // Calculate grades (as percentage of max)
+      const moneyG = grade(Math.min(100, G.totalEarned / 1e9 * 100));
+      const townG = grade(builtCount / 30 * 100);
+      const happyG = grade(hScore);
+      const svcG = grade(svcCount / cityServiceDefs.length * 100);
+      const badgeG = grade(badgeCount / achievementDefs.length * 100);
+      const clickG = grade(Math.min(100, cps / 4 * 100)); // 4 cps = A+
+      const grades = [moneyG, townG, happyG, svcG, badgeG, clickG];
+      const avg = grades.reduce((s,g) => s + ('A+AaB+BbCcDdFf'.indexOf(g[0].charAt(0)) < 6 ? 90 : 'B+Bb'.includes(g[0]) ? 75 : g[0]==='C' ? 50 : g[0]==='D' ? 35 : 15), 0) / grades.length;
+      const overall = grade(avg);
+      return '<h2>📋 MAYOR\'S REPORT CARD</h2>' +
+        '<table>' +
+          '<tr><th>Subject</th><th style="text-align:center">Grade</th></tr>' +
+          '<tr><td>💰 Money Making</td><td style="text-align:center;font-size:16px;font-weight:700;color:' + moneyG[1] + '">' + moneyG[0] + '</td></tr>' +
+          '<tr><td>🏙️ Town Building</td><td style="text-align:center;font-size:16px;font-weight:700;color:' + townG[1] + '">' + townG[0] + '</td></tr>' +
+          '<tr><td>😊 Citizen Happiness</td><td style="text-align:center;font-size:16px;font-weight:700;color:' + happyG[1] + '">' + happyG[0] + '</td></tr>' +
+          '<tr><td>🏛️ City Services</td><td style="text-align:center;font-size:16px;font-weight:700;color:' + svcG[1] + '">' + svcG[0] + '</td></tr>' +
+          '<tr><td>🏅 Badges Collected</td><td style="text-align:center;font-size:16px;font-weight:700;color:' + badgeG[1] + '">' + badgeG[0] + '</td></tr>' +
+          '<tr><td>🖱️ Click Speed</td><td style="text-align:center;font-size:16px;font-weight:700;color:' + clickG[1] + '">' + clickG[0] + '</td></tr>' +
+          '<tr style="border-top:2px solid #333;"><td style="font-weight:700;font-size:13px;">⭐ OVERALL GRADE</td><td style="text-align:center;font-size:22px;font-weight:700;color:' + overall[1] + '">' + overall[0] + '</td></tr>' +
+        '</table>';
+    })() +
+
     '<h2>🏅 LEGENDARY HIRES</h2>' +
     '<table>' +
       '<tr><td>🐐 Max Wellington</td><td class="stat-val">' + (hasSean ? '✅ Hired' : '❌ Not Hired') + '</td></tr>' +
