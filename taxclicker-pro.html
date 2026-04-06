@@ -194,10 +194,21 @@ html, body {
 #win-box .win-body .win-hero {
   text-align: center; padding: 12px 0; font-family: 'VT323', monospace;
 }
-#win-box .win-body .win-hero .win-trophy { font-size: 48px; }
+#win-box .win-body .win-hero .win-trophy {
+  font-size: 64px; animation: trophyBounce 1s ease-in-out infinite;
+  filter: drop-shadow(0 0 12px rgba(255,215,0,0.8)) drop-shadow(0 0 24px rgba(255,215,0,0.4));
+}
+@keyframes trophyBounce {
+  0%,100% { transform: scale(1) rotate(0deg); }
+  25% { transform: scale(1.1) rotate(-5deg); }
+  50% { transform: scale(1.15) rotate(0deg); }
+  75% { transform: scale(1.1) rotate(5deg); }
+}
 #win-box .win-body .win-hero .win-headline {
   font-size: 22px; color: #b8860b; margin: 8px 0 4px 0;
+  animation: headlineGlow 2s ease-in-out infinite alternate;
 }
+@keyframes headlineGlow { from{text-shadow:0 0 4px rgba(184,134,11,0.3);} to{text-shadow:0 0 16px rgba(255,215,0,0.8);} }
 #win-box .win-body .win-hero .win-time {
   font-size: 28px; color: var(--win-blue); letter-spacing: 2px;
 }
