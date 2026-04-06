@@ -599,6 +599,7 @@ html, body {
       <button id="power-click-btn" onclick="doPowerClick()">⚡ POWER CLICK! <span id="power-timer"></span></button>
     </div>
     <div id="click-hint" style="text-align:center;font-family:'VT323',monospace;font-size:18px;color:#000080;padding:4px;animation:pulse 1s infinite;">👆 Click the button to earn money!</div>
+    <div id="tutorial-guide" style="display:none;text-align:center;font-family:'VT323',monospace;font-size:15px;padding:4px 8px;background:#fffde7;border:2px solid #ffd600;margin:2px 0;"></div>
     <div id="next-tip">💡 Keep clicking to earn money!</div>
     <div id="town-mini" style="display:none;padding:4px 8px;background:#e8f4e8;border-top:1px solid #a8d8a8;font-size:10px;font-family:'IBM Plex Mono',monospace;">
       <div style="display:flex;justify-content:space-between;align-items:center;">
@@ -2806,6 +2807,7 @@ function tick(){
   }
   // Decay combo display when idle
   updateComboDisplay();
+  updateTutorial();
   // Auto-save every 30 seconds
   if (!G._lastSave || now - G._lastSave >= 30000) {
     G._lastSave = now;
@@ -2871,6 +2873,7 @@ function doRestart() {
   G.disabledBuildings = {}; G.disasterTimer = 0; G.nextDisasterIn = 120 + Math.random() * 60;
   G.startTime = Date.now(); G.gameWon = false; G.winByBillion = false; G.gameStarted = false;
   G._badges = []; G._pbBeaten = false; G._newspapers = []; G._passiveTiersDone = []; G._hitRank1 = false; G._survivedDisaster = false; G._constructing = {}; G._repairTaps = {};
+  _tutStep = 0; const tg = document.getElementById('tutorial-guide'); if (tg) tg.style.display = 'none';
   const tray = document.getElementById('badge-tray'); if (tray) { tray.style.display='none'; tray.textContent=''; }
   G.peakRPS = 0; G.peakClickVal = 0;
   G.clickRevenue = 0; G.passiveRevenue = 0;
@@ -2897,6 +2900,32 @@ function showAbout() {
 // ══════════════════════════════════════════════
 //  WIN CONDITION — $1 BILLION
 // ══════════════════════════════════════════════
+// Step-by-step tutorial for new players
+const tutorialSteps = [
+  { check: () => G.totalClicks >= 5, msg: '👆 Great clicking! Keep going!', next: '💡 Now buy an upgrade! Check the tabs with the green $ →' },
+  { check: () => upgrades.some(u => u.owned > 0), msg: '🎉 You bought your first upgrade!', next: '💡 Check the 🏙️ Town tab to see your town!' },
+  { check: () => townSlots.filter(s => G.totalEarned >= s.at).length >= 2, msg: '🏠 Your town is growing!', next: '' },
+];
+let _tutStep = 0;
+function updateTutorial() {
+  const guide = document.getElementById('tutorial-guide');
+  if (!guide || !G.gameStarted || G.gameWon) return;
+  if (_tutStep >= tutorialSteps.length) { guide.style.display = 'none'; return; }
+  const step = tutorialSteps[_tutStep];
+  if (step.check()) {
+    _tutStep++;
+    if (_tutStep < tutorialSteps.length) {
+      guide.style.display = 'block';
+      guide.textContent = tutorialSteps[_tutStep - 1].next;
+    } else {
+      guide.style.display = 'none';
+    }
+  } else if (_tutStep === 0 && G.totalClicks >= 1) {
+    guide.style.display = 'block';
+    guide.textContent = '👆 Keep clicking! (' + G.totalClicks + '/5)';
+  }
+}
+
 function checkWin() {
   if (G.gameWon) return;
   if (G.totalEarned >= 1e9) {
